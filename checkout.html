@@ -894,23 +894,6 @@
         }
       }
 
-      // Verificar e enviar dados do pedido pago
-      async function checkAndSendPaidOrder() {
-        const orderData = localStorage.getItem("currentOrderData");
-        if (orderData) {
-          const order = JSON.parse(orderData);
-          // Atualizar status para pago
-          order.status = "pix_paid";
-          order.paidAt = new Date().toISOString();
-
-          // Enviar dados do pedido para o webhook
-          await sendOrderData(order);
-
-          // Limpar dados após envio
-          localStorage.removeItem("currentOrderData");
-        }
-      }
-
       // Display PIX QR Code
       function displayPixQrCode(pixData) {
         document.getElementById("pixLoading").style.display = "none";
@@ -980,97 +963,139 @@
           });
       }
 
-      // NOVO: Webhook processará o pagamento automaticamente
-      // Este código é mantido apenas como backup para verificação manual
-      // O fluxo ideal é:
-      // 1. Usuário faz o pagamento PIX
-      // 2. Paradise Pags detecta o pagamento
-      // 3. Envia notificação para webhook.php
-      // 4. webhook.php atualiza o banco com status "pix_paid"
-      // 5. Dados são salvos automaticamente
-
-      // Se precisar fazer polling para verificar status:
-      async function checkPaymentStatus(transactionId) {
+      // ⭐ Verificar status da transação via API Paradise Pags
+      async function checkTransactionStatus(externalId) {
         try {
-          const response = await fetch(
-            `${PARADISE_API_URL}?transaction_id=${transactionId}`,
-            {
-              method: "GET",
-              headers: {
-                "X-API-Key": PARADISE_API_KEY,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const queryUrl = `https://multi.paradisepags.com/api/v1/query.php?action=list_transactions&external_id=${externalId}`;
+
+          const response = await fetch(queryUrl, {
+            method: "GET",
+            headers: {
+              "X-API-Key": PARADISE_API_KEY,
+              "Content-Type": "application/json",
+            },
+          });
 
           const data = await response.json();
 
-          if (data.status === "success" && data.transaction_status === "paid") {
+          if (Array.isArray(data) && data.length > 0) {
+            const transaction = data[0];
+            console.log("Status da transação:", transaction.status);
+            return transaction.status; // Retorna: pending, approved, failed, refunded
+          }
+
+          return null;
+        } catch (error) {
+          console.error("Erro ao verificar status da transação:", error);
+          return null;
+        }
+      }
+
+      // ⭐ Enviar dados do pedido para Supabase com status atualizado
+      async function sendPaidOrderToSupabase(orderData) {
+        try {
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                Prefer: "return=representation",
+              },
+              body: JSON.stringify(orderData),
+            }
+          );
+
+          if (response.ok) {
+            console.log("Pedido pago enviado para Supabase com sucesso");
             return true;
           } else {
+            console.error(
+              "Erro ao enviar pedido para Supabase:",
+              response.status
+            );
             return false;
           }
         } catch (error) {
-          console.error("Erro ao verificar status do pagamento:", error);
+          console.error("Erro ao enviar dados:", error);
           return false;
         }
       }
 
-      // Função auxiliar: Buscar status do pedido no banco
-      async function checkOrderStatus(orderId) {
-        try {
-          const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?order_id=eq.${orderId}&select=status`,
-            {
-              method: "GET",
-              headers: {
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          const data = await response.json();
-          if (data && data.length > 0) {
-            return data[0].status;
-          }
-          return null;
-        } catch (error) {
-          console.error("Erro ao verificar status do pedido:", error);
-          return null;
-        }
-      }
-
-      // Polling automático para sincronizar com webhook
+      // ⭐ Polling automático com timeout de 5 minutos
       function startPaymentPolling(orderId) {
         let attempts = 0;
-        const maxAttempts = 60; // 60 tentativas = 5 minutos (5 segundos cada)
+        const maxAttempts = 60; // 60 tentativas × 5 segundos = 5 minutos
 
         const pollInterval = setInterval(async () => {
           attempts++;
+          console.log(
+            `[Polling ${attempts}/60] Verificando status da transação...`
+          );
 
-          const status = await checkOrderStatus(orderId);
+          // Verificar status via API Paradise Pags
+          const status = await checkTransactionStatus(orderId);
 
-          if (status === "pix_paid") {
+          if (status === "approved") {
+            // ✅ Pagamento aprovado!
             clearInterval(pollInterval);
-            showToast("✅ Pagamento confirmado! Pedido processado.");
+            showToast("✅ Pagamento confirmado!");
 
-            // Limpar dados
+            // Obter dados do pedido armazenado
+            const orderDataStr = localStorage.getItem("currentOrderData");
+            if (orderDataStr) {
+              const orderData = JSON.parse(orderDataStr);
+              orderData.status = "pix_paid";
+              orderData.paid_at = new Date().toISOString();
+              orderData.updated_at = new Date().toISOString();
+
+              // Enviar para Supabase
+              await sendPaidOrderToSupabase(orderData);
+            }
+
+            // Limpar dados locais após 2 segundos
             setTimeout(() => {
               localStorage.removeItem("currentOrderData");
               localStorage.removeItem("cartItems");
               localStorage.removeItem("deliveryAddress");
               localStorage.removeItem("customerCpf");
 
-              // Redirecionar para home
+              // Mostrar mensagem de sucesso e redirecionar
+              showToast("🎉 Seu pedido foi confirmado!");
               setTimeout(() => {
-                window.location.href = "/iphone-product-page.html";
-              }, 1500);
-            }, 1000);
-          } else if (attempts >= maxAttempts) {
+                window.location.href = "/index.html";
+              }, 2000);
+            }, 2000);
+          } else if (status === "failed") {
+            // ❌ Pagamento recusado
             clearInterval(pollInterval);
-            showToast("⏱️ Tempo de verificação expirado. Tente novamente.");
+            showToast("❌ Pagamento recusado. Tente novamente.");
+
+            // Atualizar status no Supabase
+            const orderDataStr = localStorage.getItem("currentOrderData");
+            if (orderDataStr) {
+              const orderData = JSON.parse(orderDataStr);
+              orderData.status = "pix_failed";
+              orderData.updated_at = new Date().toISOString();
+              await sendPaidOrderToSupabase(orderData);
+            }
+          } else if (attempts >= maxAttempts) {
+            // ⏱️ Timeout de 5 minutos
+            clearInterval(pollInterval);
+            showToast(
+              "⏱️ Tempo limite de 5 minutos expirado. Tente novamente."
+            );
+
+            // Marcar como expirado no Supabase
+            const orderDataStr = localStorage.getItem("currentOrderData");
+            if (orderDataStr) {
+              const orderData = JSON.parse(orderDataStr);
+              orderData.status = "pix_expired";
+              orderData.updated_at = new Date().toISOString();
+              await sendPaidOrderToSupabase(orderData);
+            }
           }
         }, 5000); // Verificar a cada 5 segundos
       }
