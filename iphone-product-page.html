@@ -1,0 +1,5477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <!--
+  ========================================
+  PÁGINA DE PRODUTO - TIKTOK SHOP CLONE
+  ========================================
+  
+  ESTRUTURA DO CÓDIGO:
+  1. CSS Styles (linhas ~7-2500)
+  2. HTML Content (linhas ~2500-3500)
+  3. JavaScript (linhas ~3500-fim)
+  
+  SEÇÕES JAVASCRIPT:
+  - Configuração de Variáveis Globais
+  - Banco de Dados de Produtos (EDITE AQUI PARA TROCAR PRODUTOS)
+  - Funções de Gerenciamento de Carrinho
+  - Funções de Galeria e Carrossel
+  - Funções de Navegação
+  - Funções de Modais (Carrinho, Loja, Chat)
+  - Funções de Compartilhamento e Denúncia
+  - Funções de Troca de Produto
+  - Funções de Formulários (CPF e Endereço)
+  - Funções de Notificação
+  
+  PARA ADICIONAR/EDITAR PRODUTOS:
+  Vá até a seção "BANCO DE DADOS DE PRODUTOS" no JavaScript
+  e edite o objeto 'productsDatabase'
+  
+  ========================================
+  -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TikTok Shop</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f5f5f5;
+        max-width: 480px;
+        margin: 0 auto;
+        background: white;
+        padding-bottom: 80px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .header-left {
+        display: flex;
+        gap: 20px;
+      }
+
+      .header-right {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .icon-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+      }
+
+      .cart-icon {
+        position: relative;
+      }
+
+      .cart-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ff1744;
+        color: white;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 0 5px;
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        position: sticky;
+        top: 60px;
+        z-index: 150;
+        gap: 0;
+        pointer-events: auto;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 0;
+        border: none;
+        background: none;
+        font-size: 14px;
+        color: #666;
+        cursor: pointer;
+        white-space: nowrap;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        position: relative;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        user-select: none;
+        touch-action: manipulation;
+      }
+
+      .tab * {
+        pointer-events: none;
+      }
+
+      .tab:active {
+        background: #f5f5f5;
+      }
+
+      .tab.active {
+        color: #333;
+        font-weight: 600;
+        border-bottom-color: #333;
+      }
+
+      .product-gallery {
+        position: relative;
+        background: #fcfcfc;
+        padding: 20px 20px 15px 20px;
+      }
+
+      .gallery-container {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .gallery-images {
+        display: flex;
+        transition: transform 0.3s ease;
+      }
+
+      .gallery-image {
+        min-width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .gallery-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.15));
+      }
+
+      .gallery-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #333;
+        z-index: 10;
+      }
+
+      .gallery-nav.prev {
+        left: 10px;
+      }
+
+      .gallery-nav.next {
+        right: 10px;
+      }
+
+      .gallery-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ccc;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .dot.active {
+        background: #333;
+        width: 24px;
+        border-radius: 4px;
+      }
+
+      .price-banner {
+        background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+      }
+
+      .price-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .discount-badge {
+        background: white;
+        color: #ff6b35;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .price-info h3 {
+        font-size: 12px;
+        font-weight: normal;
+        opacity: 0.9;
+      }
+
+      .price-info .price {
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .price-info .old-price {
+        font-size: 12px;
+        text-decoration: line-through;
+        opacity: 0.8;
+      }
+
+      .flash-sale {
+        text-align: right;
+      }
+
+      .flash-icon {
+        font-size: 20px;
+      }
+
+      .flash-sale p {
+        font-size: 12px;
+        margin-top: 4px;
+      }
+
+      .promo-badge {
+        background: #ffe5ea;
+        color: #e10341;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+        border-radius: 4px;
+        margin: 12px 20px;
+      }
+
+      .product-info {
+        padding: 0px 20px;
+        background: white;
+      }
+
+      .product-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        line-height: 1.4;
+        margin-bottom: 8px;
+      }
+
+      .rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 0;
+      }
+
+      .stars {
+        color: #ffc107;
+      }
+
+      .shipping-info {
+        background: #f5f5f5;
+        padding: 5px;
+        border-radius: 8px;
+        margin: 12px 20px;
+      }
+
+      .shipping-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .shipping-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .free-badge {
+        background: #e1f5f5;
+        color: #2b9596;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .shipping-date {
+        font-size: 10px;
+        color: #666;
+      }
+
+      .shipping-price {
+        font-size: 11px;
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      .color-selector {
+        padding: 12px 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .color-grid {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .color-option {
+        width: 60px;
+        height: 80px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        overflow: hidden;
+        background: white;
+      }
+
+      .color-option.selected {
+        border-color: #333;
+        border-width: 3px;
+      }
+
+      .color-option:hover {
+        border-color: #666;
+      }
+
+      .color-option img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .more-colors {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .services-section {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+
+      .services-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        font-weight: 500;
+        margin-bottom: 0;
+        padding: 12px 20px;
+        background-color: #fef7ec;
+      }
+
+      .services-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .services-header .service-item {
+        margin: 0;
+      }
+
+      .service-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-size: 12px;
+      }
+
+      .checkmark {
+        color: #8c6a14;
+        font-weight: bold;
+      }
+
+      /* Vídeos dos Criadores */
+      .creators-section {
+        padding: 20px;
+        border-top: 8px solid #f5f5f5;
+        background: white;
+      }
+
+      .creators-header {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .creators-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .creator-video {
+        position: relative;
+        aspect-ratio: 9/16;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+        cursor: pointer;
+      }
+
+      .creator-video video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .creator-video-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 8px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+        color: white;
+      }
+
+      .creator-name {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .creator-verified {
+        width: 12px;
+        height: 12px;
+        color: #20d5ec;
+      }
+
+      .creator-views {
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        opacity: 0.9;
+      }
+
+      .creator-play-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .creator-play-icon i {
+        width: 20px;
+        height: 20px;
+        color: #000;
+        margin-left: 2px;
+      }
+
+      .reviews-section {
+        padding: 0;
+        border-top: 8px solid #f5f5f5;
+        margin-left: 0;
+      }
+
+      .reviews-header {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-left: 20px;
+      }
+
+      .review-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 0;
+      }
+
+      .review-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ddd;
+        overflow: hidden;
+        flex-shrink: 0;
+        align-self: flex-start;
+      }
+
+      .review-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .review-content h4 {
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+
+      .review-stars {
+        color: #ffc107;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      .review-image {
+        width: 100%;
+        max-width: 150px;
+        height: auto;
+        border-radius: 8px;
+        margin-top: 10px;
+        object-fit: cover;
+      }
+
+      .store-section {
+        padding: 20px;
+        border-top: 8px solid #f5f5f5;
+      }
+
+      .store-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+      }
+
+      .store-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .store-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+
+      .store-name {
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+
+      .store-products {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .follow-btn {
+        padding: 8px 20px;
+        border: 1px solid #333;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .description-section {
+        padding: 20px;
+        border-top: 8px solid #f5f5f5;
+      }
+
+      .description-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .description-text {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .feature-block {
+        margin-bottom: 25px;
+      }
+
+      .feature-title {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 480px;
+        margin: 0 auto;
+        background: white;
+        padding: 12px 16px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 100;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 8px 4px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s;
+        color: #666;
+        font-size: 12px;
+        min-height: 48px;
+      }
+
+      .nav-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .nav-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 2px;
+      }
+
+      .nav-text {
+        font-size: 10px;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      .nav-btn-cart {
+        flex: 1;
+        background: #f5f5f5;
+        color: #333;
+        font-weight: bold;
+        padding: 12px 8px;
+        border-radius: 8px;
+        min-height: 48px;
+      }
+
+      .nav-btn-cart:hover {
+        background: #e0e0e0;
+      }
+
+      .nav-cart-text {
+        display: block;
+        font-size: 15px;
+        line-height: 1;
+        text-align: center;
+      }
+
+      .nav-btn-buy {
+        flex: 1;
+        background: #fe2c55;
+        color: white;
+        padding: 12px 8px;
+        border-radius: 8px;
+        min-height: 48px;
+      }
+
+      .nav-btn-buy:hover {
+        background: #fe2c55;
+      }
+
+      .nav-buy-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .nav-buy-text {
+        font-size: 15px;
+        font-weight: bold;
+        line-height: 1;
+      }
+
+      .nav-buy-subtext {
+        font-size: 12px;
+        opacity: 0.9;
+        line-height: 1;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .flash-icon {
+        animation: pulse 1.5s infinite;
+      }
+
+      /* Produtos Recomendados */
+      .recommendations-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .product-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .product-card-icons {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+      }
+
+      .card-icon-btn {
+        background: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .product-card img {
+        width: 100%;
+        height: 160px;
+        object-fit: contain;
+        background: #f9f9f9;
+        padding: 15px;
+      }
+
+      .product-card-content {
+        padding: 12px;
+      }
+
+      .product-card-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.3;
+        min-height: 34px;
+      }
+
+      .product-card-price {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .price-current {
+        font-size: 16px;
+        font-weight: 700;
+        color: #e91e63;
+      }
+
+      .price-old {
+        font-size: 11px;
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      .discount-tag {
+        display: inline-block;
+        background: #ff5252;
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-bottom: 6px;
+      }
+
+      .product-card-rating {
+        font-size: 11px;
+        color: #666;
+      }
+
+      .add-to-cart-btn {
+        width: 100%;
+        background: #fe2c55;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 8px;
+        transition: all 0.3s;
+      }
+
+      .add-to-cart-btn:hover {
+        background: #cc0000;
+        transform: translateY(-1px);
+      }
+
+      .add-to-cart-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Footer */
+      .footer-section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin-top: 30px;
+      }
+
+      .footer-item {
+        background: white;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .footer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        user-select: none;
+      }
+
+      .footer-arrow {
+        font-size: 20px;
+        transition: transform 0.3s;
+      }
+
+      .footer-item.open .footer-arrow {
+        transform: rotate(90deg);
+      }
+
+      .footer-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+
+      .footer-item.open .footer-content {
+        max-height: 300px;
+      }
+
+      .footer-content a {
+        display: block;
+        padding: 12px 20px;
+        color: #666;
+        text-decoration: none;
+        font-size: 14px;
+        border-top: 1px solid #f5f5f5;
+      }
+
+      .footer-content a:hover {
+        background: #f9f9f9;
+      }
+
+      .footer-bottom {
+        text-align: center;
+        padding: 20px 0 10px;
+        color: #999;
+        font-size: 12px;
+      }
+
+      /* Notificação Toast */
+      .toast {
+        position: fixed;
+        top: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4caf50;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 90;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* Modal de Compra */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        animation: fadeIn 0.3s;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: white;
+        width: 100%;
+        max-width: 480px;
+        border-radius: 20px 20px 0 0;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+        position: relative;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .modal-product-info {
+        display: flex;
+        gap: 15px;
+        flex: 1;
+      }
+
+      .modal-product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        background: #f5f5f5;
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      .modal-product-details h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e91e63;
+        margin-bottom: 5px;
+      }
+
+      .modal-product-details .old-price-modal {
+        font-size: 13px;
+        color: #999;
+        text-decoration: line-through;
+        margin-bottom: 5px;
+      }
+
+      .modal-product-details .stock {
+        font-size: 13px;
+        color: #666;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+      }
+
+      .modal-section {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .modal-section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .color-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .color-option-modal {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+      }
+
+      .color-option-modal.selected {
+        border-color: #e91e63;
+        background: #fff5f8;
+      }
+
+      .color-option-modal img {
+        width: 60px;
+        height: 70px;
+        object-fit: contain;
+        margin-bottom: 8px;
+      }
+
+      .color-option-modal span {
+        display: block;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .model-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .model-option {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+      }
+
+      .model-option.selected {
+        border-color: #e91e63;
+        background: #fff5f8;
+      }
+
+      .model-option span:first-child {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .model-option span:last-child {
+        font-size: 16px;
+        font-weight: 700;
+        color: #e91e63;
+      }
+
+      .quantity-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .qty-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        background: white;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+      }
+
+      .qty-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .qty-input {
+        width: 45px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 6px;
+        font-size: 14px;
+      }
+
+      .quantity-total {
+        text-align: right;
+      }
+
+      .quantity-total-label {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .quantity-total-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e91e63;
+      }
+
+      .modal-actions {
+        padding: 20px;
+        display: flex;
+        gap: 12px;
+      }
+
+      .modal-btn {
+        flex: 1;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .modal-btn-secondary {
+        background: white;
+        border: 2px solid #e91e63;
+        color: #e91e63;
+      }
+
+      .modal-btn-primary {
+        background: #ff0000;
+        border: none;
+        color: white;
+      }
+
+      .modal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+      }
+
+      /* Modal do Carrinho */
+      .cart-modal-content {
+        background: #f5f5f5;
+        width: 100%;
+        max-width: 480px;
+        height: 100vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cart-modal-header {
+        background: white;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .cart-header-top {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .cart-header-center {
+        flex: 1;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .cart-back-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #333;
+        padding: 0;
+      }
+
+      .cart-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+
+      .cart-add-address {
+        color: #333;
+        font-size: 12px;
+        text-decoration: none;
+        font-weight: 400;
+      }
+
+      .cart-edit-btn {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 100px;
+      }
+
+      .cart-vendor-section {
+        background: white;
+        margin-bottom: 10px;
+        padding: 15px;
+      }
+
+      .cart-vendor-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+      }
+
+      .cart-vendor-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .cart-vendor-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      .cart-vendor-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .cart-shipping-badge {
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-weight: 500;
+      }
+
+      .cart-item {
+        display: flex;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid #f0f0f0;
+      }
+
+      .cart-item:first-child {
+        border-top: none;
+      }
+
+      .cart-item-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        margin-top: 5px;
+      }
+
+      .cart-item-image-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+      }
+
+      .cart-item-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+      }
+
+      .cart-promo-badge {
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        background: #ff3b30;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 6px;
+        border-radius: 3px;
+      }
+
+      .cart-item-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .cart-item-name {
+        font-size: 14px;
+        font-weight: 400;
+        color: #333;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .cart-item-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ff0000;
+      }
+
+      .cart-item-old-price-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .cart-item-old-price {
+        font-size: 13px;
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      .cart-item-discount {
+        background: #ffebee;
+        color: #e91e63;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-weight: 600;
+      }
+
+      .cart-social-proof {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .cart-price-alert {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f3e5f5;
+        color: #7b1fa2;
+        font-size: 11px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .cart-price-alert i {
+        font-size: 12px;
+      }
+
+      .cart-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .cart-remove-btn {
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+      }
+
+      .cart-remove-btn:hover {
+        color: #ff0000;
+      }
+
+      .cart-qty-btn {
+        width: 26px;
+        height: 26px;
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        background: white;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+      }
+
+      .cart-qty-display {
+        min-width: 35px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .cart-protection-section {
+        background: #faf6f0;
+        padding: 15px;
+        margin-bottom: 10px;
+      }
+
+      .cart-protection-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .cart-protection-icon {
+        width: 24px;
+        height: 24px;
+        color: #8c6a14;
+      }
+
+      .cart-protection-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .cart-protection-items {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .cart-protection-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #666;
+      }
+
+      .cart-protection-check {
+        color: #8c6a14;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .empty-cart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        text-align: center;
+        color: #999;
+        background: white;
+      }
+
+      .empty-cart i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-cart p {
+        font-size: 16px;
+        margin: 0;
+      }
+
+      .cart-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 480px;
+        margin: 0 auto;
+        background: white;
+        padding: 15px 20px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+      }
+
+      .cart-footer-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+      }
+
+      .cart-footer-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .cart-footer-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .cart-select-all {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .cart-select-all-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .cart-select-all-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #e91e63;
+        border-radius: 50%;
+        cursor: pointer;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .cart-select-all-checkbox.checked {
+        background: #e91e63;
+      }
+
+      .cart-select-all-checkbox.checked::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 4px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+
+      .cart-select-all-label {
+        font-size: 14px;
+        color: #333;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .cart-total {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+      }
+
+      .cart-total-top {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+      }
+
+      .cart-total-label {
+        font-size: 13px;
+        color: #666;
+      }
+
+      .cart-total-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ff0000;
+      }
+
+      .cart-free-shipping {
+        font-size: 11px;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      .cart-checkout-btn {
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        line-height: 1.2;
+      }
+
+      .cart-checkout-btn:hover {
+        background: #cc0000;
+        box-shadow: 0 6px 16px rgba(255, 0, 0, 0.4);
+      }
+
+      .cart-checkout-btn:active {
+        transform: scale(0.98);
+      }
+
+      /* Checkout Modal */
+      .checkout-modal-content {
+        background: #f5f5f5;
+        width: 100%;
+        max-width: 480px;
+        height: 100vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .checkout-header {
+        background: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .checkout-back-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #333;
+        padding: 0;
+        display: flex;
+        align-items: center;
+      }
+
+      .checkout-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+
+      .checkout-alert {
+        background: #8b7355;
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+
+      .checkout-actions {
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .checkout-action-btn {
+        background: #e8e8e8;
+        border: none;
+        padding: 15px 20px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .checkout-divider {
+        height: 8px;
+        background: repeating-linear-gradient(
+          90deg,
+          #ff0050 0px,
+          #ff0050 20px,
+          #00d4ff 20px,
+          #00d4ff 40px,
+          #ffeb3b 40px,
+          #ffeb3b 60px
+        );
+        margin: 15px 0;
+        border-top: 2px dashed #ccc;
+        border-bottom: 2px dashed #ccc;
+      }
+
+      .checkout-product-card {
+        background: white;
+        padding: 15px 20px;
+        margin-bottom: 10px;
+      }
+
+      .checkout-vendor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .checkout-vendor-name {
+        font-weight: 700;
+        font-size: 15px;
+        color: #333;
+      }
+
+      .checkout-add-note {
+        color: #999;
+        font-size: 13px;
+        text-decoration: none;
+      }
+
+      .checkout-rating {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 15px;
+      }
+
+      .checkout-shipping-estimate {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f0f9f4;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #2e7d32;
+      }
+
+      .checkout-shipping-estimate strong {
+        color: #1b5e20;
+        font-weight: 600;
+      }
+
+      .checkout-product-row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .checkout-product-image-wrapper {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+      }
+
+      .checkout-product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .checkout-promo-badge {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: #ff0000;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .checkout-product-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .checkout-product-name {
+        font-size: 14px;
+        color: #333;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .checkout-return {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .checkout-price-row {
+        display: flex;
+        align-items: center;
+      }
+
+      .checkout-prices {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .checkout-current-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ff0000;
+      }
+
+      .checkout-old-price {
+        font-size: 13px;
+        color: #999;
+        text-decoration: line-through;
+      }
+
+      .checkout-discount-badge {
+        background: #ff0000;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .checkout-quantity {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .checkout-qty-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #333;
+      }
+
+      .checkout-qty-display {
+        font-size: 14px;
+        color: #333;
+        min-width: 20px;
+        text-align: center;
+      }
+
+      .checkout-discount-section {
+        background: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .checkout-summary {
+        background: white;
+        margin-bottom: 80px;
+      }
+
+      .checkout-summary-header {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+      }
+
+      .checkout-summary-content {
+        padding: 0 20px 15px;
+        display: none;
+      }
+
+      .checkout-summary-content.open {
+        display: block;
+      }
+
+      .checkout-summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .checkout-summary-total {
+        border-top: 1px solid #e0e0e0;
+        margin-top: 8px;
+        padding-top: 12px;
+        font-weight: 600;
+        color: #333;
+        font-size: 15px;
+      }
+
+      .checkout-free-shipping {
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      .checkout-total-price {
+        color: #ff0000;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .checkout-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 15px 20px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+      }
+
+      .checkout-footer-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .checkout-footer-label {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .checkout-footer-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ff0000;
+      }
+
+      .checkout-finish-btn {
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .checkout-finish-btn:hover {
+        background: #cc0000;
+      }
+
+      /* Store Modal */
+      .store-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        animation: fadeIn 0.3s;
+      }
+
+      .store-modal-overlay.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .store-modal-content {
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 20px;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+        padding: 24px;
+      }
+
+      .store-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .store-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid #ff6b35;
+        object-fit: cover;
+      }
+
+      .store-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .store-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .store-stars {
+        color: #ffc107;
+        font-size: 16px;
+      }
+
+      .store-rating-number {
+        font-weight: 600;
+        color: #333;
+      }
+
+      .store-rating-count {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .store-info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .store-info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .store-icon-wrapper {
+        width: 32px;
+        height: 32px;
+        background: #fff3e0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .store-icon-wrapper i {
+        color: #ff6b35;
+        width: 16px;
+        height: 16px;
+      }
+
+      .store-info-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 2px;
+      }
+
+      .store-info-value {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .store-about-section {
+        border-top: 1px solid #e0e0e0;
+        padding-top: 16px;
+      }
+
+      .store-about-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .store-about-text {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      /* Chat Modal */
+      .chat-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        animation: fadeIn 0.3s;
+      }
+
+      .chat-modal-overlay.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chat-modal-content {
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 12px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        animation: slideUp 0.3s;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .chat-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .chat-avatar {
+        width: 40px;
+        height: 40px;
+        background: #2196f3;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chat-avatar svg {
+        width: 24px;
+        height: 24px;
+        color: white;
+      }
+
+      .chat-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .chat-status {
+        font-size: 12px;
+        color: #4caf50;
+        font-weight: 500;
+      }
+
+      .chat-close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #666;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      .chat-close-btn:hover {
+        color: #333;
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+      }
+
+      .chat-message {
+        display: flex;
+        margin-bottom: 16px;
+      }
+
+      .chat-message-avatar {
+        width: 32px;
+        height: 32px;
+        background: #2196f3;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 12px;
+      }
+
+      .chat-message-avatar svg {
+        width: 16px;
+        height: 16px;
+        color: white;
+      }
+
+      .chat-message-bubble {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 12px;
+        padding: 12px;
+        max-width: 80%;
+      }
+
+      .chat-message-text {
+        font-size: 14px;
+        color: #333;
+      }
+
+      .chat-questions {
+        border-top: 1px solid #e0e0e0;
+        padding: 16px;
+        background: #f9f9f9;
+      }
+
+      .chat-questions-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .chat-questions-title svg {
+        width: 16px;
+        height: 16px;
+        color: #2196f3;
+      }
+
+      .chat-question-btn {
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+        background: white;
+        border: 1px solid #bbdefb;
+        color: #1976d2;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .chat-question-btn:hover {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+      }
+
+      .chat-question-btn:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Report Modal */
+      .report-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        animation: fadeIn 0.3s;
+      }
+
+      .report-modal-overlay.show {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      .report-modal-content {
+        background: white;
+        width: 100%;
+        max-width: 600px;
+        border-radius: 20px 20px 0 0;
+        animation: slideUp 0.3s;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .report-modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        text-align: center;
+        position: relative;
+      }
+
+      .report-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .report-modal-close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #666;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      .report-options {
+        padding: 0;
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+
+      .report-option {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .report-option:hover {
+        background: #f9f9f9;
+      }
+
+      .report-option:active {
+        background: #f0f0f0;
+      }
+
+      .report-option-text {
+        font-size: 16px;
+        color: #333;
+      }
+
+      .report-option-check {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d0d0d0;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .report-option.selected .report-option-check {
+        background: #ff0050;
+        border-color: #ff0050;
+        position: relative;
+      }
+
+      .report-option.selected .report-option-check::after {
+        content: "✓";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .report-modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .report-submit-btn {
+        width: 100%;
+        background: #ff0050;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .report-submit-btn:disabled {
+        background: #d0d0d0;
+        cursor: not-allowed;
+      }
+
+      .report-submit-btn:not(:disabled):active {
+        transform: scale(0.98);
+      }
+
+      /* Address & CPF Modals */
+      .form-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1100;
+        animation: fadeIn 0.3s;
+      }
+
+      .form-modal-overlay.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .form-modal-content {
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 12px;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s;
+        padding: 24px;
+      }
+
+      .form-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .form-modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .form-modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #666;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d0d0d0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        box-sizing: border-box;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #ff0050;
+      }
+
+      .form-submit-btn {
+        width: 100%;
+        background: #ff0050;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+
+      .form-submit-btn:active {
+        transform: scale(0.98);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toast" id="toast">Produto adicionado ao carrinho!</div>
+
+    <div class="header">
+      <div class="header-left">
+        <button class="icon-btn" onclick="window.history.back()">
+          <i data-lucide="arrow-left"></i>
+        </button>
+        <button class="icon-btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" onclick="compartilhar()">
+          <img
+            src="assets/share-svgrepo-com.png"
+            alt="Compartilhar"
+            style="width: 24px; height: 24px"
+          />
+        </button>
+        <button class="icon-btn cart-icon" onclick="openCartModal()">
+          <i data-lucide="shopping-cart" style="width: 24px; height: 24px"></i>
+          <span class="cart-badge" id="cartCount">0</span>
+        </button>
+        <button class="icon-btn" onclick="denunciar()">
+          <i data-lucide="more-vertical" style="width: 24px; height: 24px"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-section="visao-geral">Visão geral</button>
+      <button class="tab" data-section="avaliacoes">Avaliações</button>
+      <button class="tab" data-section="descricao">Descrição</button>
+      <button class="tab" data-section="recomendacoes">Recomendações</button>
+    </div>
+
+    <div id="visao-geral">
+      <div class="product-gallery">
+        <div class="gallery-container">
+          <div class="gallery-images" id="galleryImages">
+            <div class="gallery-image">
+              <img src="assets/compre1leve2.png" alt="iPhone 13 Pro - Preto" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/compre2leve3.png" alt="iPhone 13 Pro - Rosa" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/cadernos.png" alt="iPhone 13 Pro - Verde" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/adesivos1.png" alt="iPhone 13 Pro - Azul" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/adesivos2.png" alt="iPhone 13 Pro - Azul" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/adesivos3.png" alt="iPhone 13 Pro - Azul" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/adesivos4.png" alt="iPhone 13 Pro - Azul" />
+            </div>
+            <div class="gallery-image">
+              <img src="assets/adesivos5.png" alt="iPhone 13 Pro - Azul" />
+            </div>
+          </div>
+          <button class="gallery-nav prev" onclick="changeSlide(-1)">
+            <i data-lucide="chevron-left"></i>
+          </button>
+          <button class="gallery-nav next" onclick="changeSlide(1)">
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+        <div class="gallery-dots" id="galleryDots"></div>
+      </div>
+
+      <div class="price-banner">
+        <div class="price-left">
+          <span class="discount-badge">-78%</span>
+          <div class="price-info">
+            <h3>Apenas por</h3>
+            <div class="price">R$47,90</div>
+            <div class="old-price">R$ 119,00</div>
+          </div>
+        </div>
+        <div class="flash-sale">
+          <div class="flash-icon"><i data-lucide="zap"></i></div>
+          <p><strong>Oferta Relâmpago</strong></p>
+          <p>Termina em 1 dia</p>
+        </div>
+      </div>
+
+      <div class="promo-badge">Black Friday</div>
+
+      <div class="product-info">
+        <h1 class="product-title">
+          Caderno de Adesivos 3D para Colar com 8 ou 24 Cenários + Pinça Grátis
+        </h1>
+
+        <div class="rating">
+          <span
+            class="stars"
+            style="color: #ffc107; font-size: 16px; line-height: 1"
+            >★</span
+          >
+          <span>4.8</span>
+          <span>(1.138)</span>
+          <span>• 4.507 vendidos</span>
+        </div>
+      </div>
+
+      <div class="shipping-info">
+        <div class="shipping-header">
+          <div class="shipping-label">
+            <img
+              src="/assets/truck-icon-Dwo68HgV.png"
+              alt="Frete grátis"
+              style="width: 18px; height: 18px"
+              class="mt-0.5 flex-shrink-0"
+            />
+            <span class="free-badge">Frete Promocional</span>
+            <span class="shipping-date">Receba até 20-25 de nov</span>
+          </div>
+          <i data-lucide="chevron-right"></i>
+        </div>
+        <div class="shipping-price">Taxa de envio: R$ 29,60</div>
+      </div>
+
+      <div class="color-selector">
+        <div class="color-grid">
+          <i data-lucide="grid"></i>
+          <div
+            class="color-option selected"
+            data-color="Grafite"
+            onclick="selectColor(this)"
+          >
+            <img src="assets/compre1leve2.png" alt="Grafite" />
+          </div>
+          <div
+            class="color-option"
+            data-color="Azul Sierra"
+            onclick="selectColor(this)"
+          >
+            <img src="assets/compre2leve3.png" alt="Azul" />
+          </div>
+          <div class="more-colors">2 opções disponíveis</div>
+        </div>
+      </div>
+
+      <div class="services-header">
+        <div class="services-title">
+          <i data-lucide="shield-check" style="color: #8c6a14"></i>
+          <span class="font-semibold text-[#8c6a14]">Proteção do Cliente</span>
+        </div>
+        <div class="services-grid">
+          <div class="service-item">
+            <span class="checkmark">✓</span>
+            <span>Devolução gratuita</span>
+          </div>
+          <div class="service-item">
+            <span class="checkmark">✓</span>
+            <span>Cupom por perda ou danos</span>
+          </div>
+          <div class="service-item">
+            <span class="checkmark">✓</span>
+            <span>Pagamento seguro</span>
+          </div>
+          <div class="service-item">
+            <span class="checkmark">✓</span>
+            <span>Cupom por atraso na coleta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vídeos dos Criadores -->
+    <div class="creators-section">
+      <div class="creators-header">Vídeos dos criadores</div>
+      <div class="creators-grid">
+        <div class="creator-video" onclick="playCreatorVideo(this)">
+          <video poster="assets/thumb1.png">
+            <source
+              src="https://mestredon8n.com/wp-content/uploads/2025/11/IMG_6190.mov"
+              type="video/mp4"
+            />
+          </video>
+          <div class="creator-play-icon">
+            <i data-lucide="play"></i>
+          </div>
+          <div class="creator-video-overlay">
+            <div class="creator-name">
+              @marcelayama
+              <i data-lucide="badge-check" class="creator-verified"></i>
+            </div>
+            <div class="creator-views">
+              <i data-lucide="eye" style="width: 12px; height: 12px"></i>
+              1.2M
+            </div>
+          </div>
+        </div>
+
+        <div class="creator-video" onclick="playCreatorVideo(this)">
+          <video poster="assets/thumb2.png">
+            <source
+              src="https://mestredon8n.com/wp-content/uploads/2025/11/IMG_6192.mov"
+              type="video/mp4"
+            />
+          </video>
+          <div class="creator-play-icon">
+            <i data-lucide="play"></i>
+          </div>
+          <div class="creator-video-overlay">
+            <div class="creator-name">
+              @unboxdegirls
+              <i data-lucide="badge-check" class="creator-verified"></i>
+            </div>
+            <div class="creator-views">
+              <i data-lucide="eye" style="width: 12px; height: 12px"></i>
+              890K
+            </div>
+          </div>
+        </div>
+
+        <div class="creator-video" onclick="playCreatorVideo(this)">
+          <video poster="assets/thumb3.png">
+            <source
+              src="https://mestredon8n.com/wp-content/uploads/2025/11/IMG_6185.mov"
+              type="video/mp4"
+            />
+          </video>
+          <div class="creator-play-icon">
+            <i data-lucide="play"></i>
+          </div>
+          <div class="creator-video-overlay">
+            <div class="creator-name">
+              @anasalgueiro
+              <i data-lucide="badge-check" class="creator-verified"></i>
+            </div>
+            <div class="creator-views">
+              <i data-lucide="eye" style="width: 12px; height: 12px"></i>
+              654K
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="avaliacoes" class="reviews-section">
+      <div class="reviews-header">Avaliações dos clientes (847)</div>
+      <div class="review-card">
+        <div class="review-avatar">
+          <img src="assets/perfil2.png" alt="A****o" />
+        </div>
+        <div class="review-content">
+          <h4>A****o</h4>
+          <div class="review-stars">
+            <span style="color: #ffc107; font-size: 14px; line-height: 1"
+              >★★★★★</span
+            >
+          </div>
+          <p>
+            veio tudo certinho! bem embalados. Os livrinhos são uma graça e
+            valem muito a pena.
+          </p>
+          <img
+            src="assets/fotos adesivos (2).JPEG"
+            alt="Review image"
+            class="review-image"
+          />
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-avatar">
+          <img src="assets/perfil3.png" alt="Maria Silva" />
+        </div>
+        <div class="review-content">
+          <h4>S**a</h4>
+          <div class="review-stars">
+            <span style="color: #ffc107; font-size: 14px; line-height: 1"
+              >★★★★★</span
+            >
+          </div>
+          <p>
+            É a minha segunda compra minha filha amou,veio tudo certinho 😍
+            entrega rápida tbm
+          </p>
+          <img
+            src="assets/avaliacao2.webp"
+            alt="Review image"
+            class="review-image"
+          />
+          <img
+            src="assets/avaliacao4.webp"
+            alt="Review image"
+            class="review-image"
+          />
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-avatar">
+          <img src="assets/perfil5.png" alt="João Pedro" />
+        </div>
+        <div class="review-content">
+          <h4>J****o</h4>
+          <div class="review-stars">
+            <span style="color: #ffc107; font-size: 14px; line-height: 1"
+              >★★★★★</span
+            >
+          </div>
+          <p>
+            Show, o caderno é bem legal, minha filha adorou Compra aprovada!!
+          </p>
+          <img src="assets/53.png" alt="Review image" class="review-image" />
+          <img src="assets/54.png" alt="Review image" class="review-image" />
+          />
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-avatar">
+          <img src="assets/perfil4.png" alt="João Pedro" />
+        </div>
+        <div class="review-content">
+          <h4>M**e</h4>
+          <div class="review-stars">
+            <span style="color: #ffc107; font-size: 14px; line-height: 1"
+              >★★★★★</span
+            >
+          </div>
+          <p>
+            O pedido chegou intacto. Minha irmã pequena amou. Aprovado. Podem
+            comprar são adesivos. Pra criança que gosta
+          </p>
+          <img
+            src="assets/avalicao6.webp"
+            alt="Review image"
+            class="review-image"
+          />
+          />
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-avatar">
+          <img src="assets/perfil6.png" alt="João Pedro" />
+        </div>
+        <div class="review-content">
+          <h4>R*****a</h4>
+          <div class="review-stars">
+            <span style="color: #ffc107; font-size: 14px; line-height: 1"
+              >★★★★★</span
+            >
+          </div>
+          <p>Perfeitooo aaa não consigo parar de colar kkkk</p>
+          <img
+            src="assets/avaliacao7.webp"
+            alt="Review image"
+            class="review-image"
+          />
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .store-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        /* Adicione outros estilos do card aqui se precisar */
+      }
+
+      .store-info {
+        display: flex;
+        align-items: center;
+      }
+
+      /* AQUI É O SEGREDO PARA A FOTO FICAR PERFEITA */
+      .store-avatar {
+        width: 48px; /* Tamanho fixo da bolinha */
+        height: 48px; /* Tamanho fixo da bolinha */
+        border-radius: 50%; /* Faz ficar redonda */
+        overflow: hidden; /* Corta o que sobrar da imagem */
+        margin-right: 12px; /* Espaço entre a foto e o texto */
+        background-color: #eee; /* Cor de fundo enquanto carrega */
+        flex-shrink: 0; /* Garante que a bolinha não amasse */
+      }
+
+      .store-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Preenche todo o círculo sem esticar a foto */
+        display: block;
+      }
+    </style>
+
+    <div class="store-section">
+      <h2 class="reviews-header">Avaliações da loja (14,3mil)</h2>
+
+      <div class="store-card">
+        <div class="store-info">
+          <div class="store-avatar">
+            <img src="assets/logomary.png" alt="Foto de perfil da loja" />
+          </div>
+          <div>
+            <div class="store-name">lojadamary</div>
+            <div class="store-products">11.8K vendido(s)</div>
+          </div>
+        </div>
+
+        <button class="follow-btn">Seguir</button>
+      </div>
+    </div>
+
+    <div id="descricao" class="description-section">
+      <h2 class="description-title">Sobre este Produto</h2>
+      <p class="description-text">
+        Não é apenas um caderno — é uma experiência criativa completa que virou
+        febre entre amantes de papelaria, planners e cenários no estilo cartoon
+        3D.
+      </p>
+
+      <div class="feature-block">
+        <div class="feature-title">MAIS DE 2.000 ADESIVOS PRONTOS PARA USO</div>
+        <p class="description-text">
+          São mais de 2.000 adesivos colecionáveis para você criar cenários
+          profundos, fofos e encantadores com estética 2.5D — como uma mini
+          maquete que ganha vida na página.
+        </p>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title">CRIATIVIDADE + TERAPIA VISUAL</div>
+        <p class="description-text">
+          Ideal para aliviar o estresse, estimular a criatividade e transformar
+          momentos de pausa em uma experiência relaxante. Cada cartela conta uma
+          história que você monta do seu jeito, sem esforço.
+        </p>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title">POR QUE ELE VENDE TANTO?</div>
+        <p class="description-text">
+          • Kits com até 5 conjuntos exclusivos de adesivos prontos para
+          aplicar<br />
+          • Estilo 2.5D com profundidade real<br />
+          • Temas variados como cabanas, jardins floridos e interiores
+          aconchegantes<br />
+          • Papel premium com impressão nítida e acabamento impecável<br />
+          • Design compacto, leve e fácil de carregar<br />
+          • Sem recortes ou bagunça — destaque e aplique<br />
+        </p>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title">PERFEITO PARA PLANNERS & SCRAPBOOKS</div>
+        <p class="description-text">
+          Deixe seu planner, bullet journal ou scrapbook com visuais
+          impressionantes. As composições ficam tão estéticas que parecem artes
+          digitais — e elevam qualquer feed de forma instantânea.
+        </p>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title">PRESENTE IDEAL</div>
+        <p class="description-text">
+          Muito mais que um mimo — é uma experiência criativa completa. Perfeito
+          para quem ama papelaria, arte, decoração, journaling ou simplesmente
+          deseja momentos de relaxamento criativo.
+        </p>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title">ESTOQUE LIMITADO</div>
+        <p class="description-text">
+          Devido à alta demanda, esse modelo costuma esgotar rapidamente.
+          Garanta o seu antes que fique indisponível novamente.
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SEÇÃO DE RECOMENDAÇÕES - PRODUTOS SIMILARES -->
+    <!-- ========================================== -->
+    <!-- Para adicionar/editar produtos recomendados, -->
+    <!-- modifique o array 'recommendedProducts' no JavaScript -->
+    <!-- ========================================== -->
+
+    <div id="recomendacoes" class="description-section">
+      <h2 class="description-title">Você também pode gostar</h2>
+
+      <div class="recommendations-grid" id="recommendationsGrid">
+        <div class="product-card">
+          <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden">
+            <img
+              src="assets/quadroled.webp"
+              alt="DEWALT Parafusadeira"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              "
+            />
+          </div>
+          <div class="product-card-content">
+            <h3 class="product-card-title">Quadro Mágico Led de Desenhar</h3>
+            <div class="product-card-price">
+              <span class="price-current">R$ 129,90</span>
+              <span class="price-old">R$ 250,00</span>
+            </div>
+            <div class="discount-tag">48% OFF</div>
+            <div class="product-card-rating">
+              <span style="color: #ffc107; font-size: 12px; line-height: 1"
+                >★</span
+              >
+              4.9 • 1.375 vendidos
+            </div>
+            <button
+              class="add-to-cart-btn"
+              onclick="addRecommendedToCart('dewalt')"
+            >
+              Adicionar ao carrinho
+            </button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden">
+            <img
+              src="assets/lontra.webp"
+              alt="Geladeira Electrolux"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              "
+            />
+          </div>
+          <div class="product-card-content">
+            <h3 class="product-card-title">
+              Pelúcia Lontra Hora de Dormir que Respira
+            </h3>
+            <div class="product-card-price">
+              <span class="price-current">R$ 147,00</span>
+              <span class="price-old">R$ 230,00</span>
+            </div>
+            <div class="discount-tag">36% OFF</div>
+            <div class="product-card-rating">
+              <span style="color: #ffc107; font-size: 12px; line-height: 1"
+                >★</span
+              >
+              4.8 • 403 vendidos
+            </div>
+            <button
+              class="add-to-cart-btn"
+              onclick="addRecommendedToCart('geladeira')"
+            >
+              Adicionar ao carrinho
+            </button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden">
+            <img
+              src="assets/brinquedoingles.webp"
+              alt="Smart TV Philco"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              "
+            />
+          </div>
+          <div class="product-card-content">
+            <h3 class="product-card-title">
+              Brinquedo para Aprender Inglês Leitor de Cartas com Som
+            </h3>
+            <div class="product-card-price">
+              <span class="price-current">R$ 129,90</span>
+              <span class="price-old">R$ 200,00</span>
+            </div>
+            <div class="discount-tag">35% OFF</div>
+            <div class="product-card-rating">
+              <span style="color: #ffc107; font-size: 12px; line-height: 1"
+                >★</span
+              >
+              4.8 • 959 vendidos
+            </div>
+            <button
+              class="add-to-cart-btn"
+              onclick="addRecommendedToCart('tv')"
+            >
+              Adicionar ao carrinho
+            </button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden">
+            <img
+              src="assets/minecraft.webp"
+              alt="Lavadora de Pressão"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              "
+            />
+          </div>
+          <div class="product-card-content">
+            <h3 class="product-card-title">
+              Brinquedo Blocos Magnéticos Minecraft de Construção
+            </h3>
+            <div class="product-card-price">
+              <span class="price-current">R$ 149,90</span>
+              <span class="price-old">R$ 300,00</span>
+            </div>
+            <div class="discount-tag">50% OFF</div>
+            <div class="product-card-rating">
+              <span style="color: #ffc107; font-size: 12px; line-height: 1"
+                >★</span
+              >
+              4.7 • 2.358 vendidos
+            </div>
+            <button
+              class="add-to-cart-btn"
+              onclick="addRecommendedToCart('lavadora')"
+            >
+              Adicionar ao carrinho
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="footer" class="footer-section">
+      <div class="footer-item" onclick="toggleFooterItem(this)">
+        <div class="footer-content">
+          <a href="#">Categorias</a>
+          <a href="#">Ofertas do Dia</a>
+          <a href="#">Mais Vendidos</a>
+          <a href="#">Lançamentos</a>
+        </div>
+      </div>
+
+      <div class="footer-item" onclick="toggleFooterItem(this)">
+        <div class="footer-content">
+          <a href="#">Seja um afiliado</a>
+          <a href="#">Venda na plataforma</a>
+          <a href="#">Programa de parceiros</a>
+        </div>
+      </div>
+
+      <div class="footer-item" onclick="toggleFooterItem(this)">
+        <div class="footer-header">
+          <span>Informações da empresa</span>
+          <span class="footer-arrow"><i data-lucide="chevron-right"></i></span>
+        </div>
+        <div class="footer-content">
+          <p
+            style="
+              padding: 12px 20px;
+              color: #666;
+              font-size: 12px;
+              line-height: 1.5;
+              margin: 0;
+            "
+          >
+            A TikTok Shop é uma plataforma de e-commerce inovadora fundada em
+            2020, conectando milhões de compradores e vendedores. Com sede em
+            São Paulo, Brasil, focamos em qualidade, segurança e satisfação do
+            cliente através de soluções tecnológicas avançadas.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-item" onclick="toggleFooterItem(this)">
+        <div class="footer-header">
+          <span>Suporte ao cliente</span>
+          <span class="footer-arrow"><i data-lucide="chevron-right"></i></span>
+        </div>
+        <div class="footer-content">
+          <p
+            style="
+              padding: 12px 20px;
+              color: #666;
+              font-size: 12px;
+              line-height: 1.5;
+              margin: 0;
+            "
+          >
+            Oferecemos atendimento ao cliente 24/7 através de chat online,
+            e-mail e telefone. Utilizamos IA avançada para respostas rápidas e
+            eficientes. Sua satisfação é nossa prioridade número um.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-item" onclick="toggleFooterItem(this)">
+        <div class="footer-header">
+          <span>Política e legal</span>
+          <span class="footer-arrow"><i data-lucide="chevron-right"></i></span>
+        </div>
+        <div class="footer-content">
+          <p
+            style="
+              padding: 12px 20px;
+              color: #666;
+              font-size: 12px;
+              line-height: 1.5;
+              margin: 0;
+            "
+          >
+            Levamos a transparência e conformidade legal a sério. Respeitamos a
+            LGPD e legislações brasileiras, protegendo seus dados pessoais.
+            Temos políticas rigorosas contra fraudes e oferecemos garantia de
+            devolução em até 7 dias.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2025 TikTok Shop. Todos os direitos reservados.</p>
+      </div>
+    </div>
+
+    <!-- Modal de Compra -->
+    <div
+      class="modal-overlay"
+      id="purchaseModal"
+      onclick="closeModalOnOverlay(event)"
+    >
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-product-info">
+            <img
+              src="assets/compre1leve2.png"
+              alt="Caderno de Adesivos"
+              class="modal-product-image"
+              id="modalProductImage"
+            />
+            <div class="modal-product-details">
+              <h3 id="modalPrice">R$ 47,90</h3>
+              <div class="old-price-modal">R$ 300,00</div>
+              <div class="stock">Estoque disponível</div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeModal()">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="modal-section">
+          <h3 class="modal-section-title">Modelo</h3>
+          <div class="model-options">
+            <div
+              class="model-option selected"
+              data-model="Compre 1 Leve 2"
+              data-price="47.90"
+              onclick="selectModel(this)"
+              style="display: flex; align-items: center; gap: 12px"
+            >
+              <img
+                src="assets/compre1leve2.png"
+                alt="8 Cenários"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  border-radius: 6px;
+                  object-fit: cover;
+                "
+              />
+              <div style="flex: 1">
+                <span style="display: block">Compre 1 Leve 2 (8 Cenários)</span>
+                <span
+                  style="
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #e91e63;
+                    display: block;
+                    margin-top: 4px;
+                  "
+                  >R$ 47,90</span
+                >
+              </div>
+            </div>
+            <div
+              class="model-option"
+              data-model="Compre 2 Leve 3 + Pinça"
+              data-price="119.45"
+              onclick="selectModel(this)"
+              style="display: flex; align-items: center; gap: 12px"
+            >
+              <img
+                src="assets/compre2leve3.png"
+                alt="24 Cenários"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  border-radius: 6px;
+                  object-fit: cover;
+                "
+              />
+              <div style="flex: 1">
+                <span style="display: block"
+                  >Compre 2 Leve 3 + Pinça (24 Cenários)</span
+                >
+                <span
+                  style="
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #e91e63;
+                    display: block;
+                    margin-top: 4px;
+                  "
+                  >R$ 119,45</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="quantity-section">
+            <h3 class="modal-section-title">Quantidade</h3>
+            <div class="quantity-controls">
+              <button class="qty-btn" onclick="decreaseQty()" id="decreaseBtn">
+                <i data-lucide="minus"></i>
+              </button>
+              <input
+                type="number"
+                class="qty-input"
+                value="1"
+                min="1"
+                max="10"
+                id="qtyInput"
+                onchange="updateTotal()"
+              />
+              <button class="qty-btn" onclick="increaseQty()">
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="modal-btn modal-btn-secondary"
+            onclick="addToCartFromModal()"
+          >
+            Adicionar ao carrinho
+          </button>
+          <button
+            class="modal-btn modal-btn-primary"
+            onclick="buyNowFromModal()"
+          >
+            Comprar agora - <span id="buyNowPrice">R$ 47,90</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal do Carrinho -->
+    <div
+      class="modal-overlay"
+      id="cartModal"
+      onclick="closeCartModalOnOverlay(event)"
+    >
+      <div class="cart-modal-content" onclick="event.stopPropagation()">
+        <div class="cart-modal-header">
+          <div class="cart-header-top">
+            <button class="cart-back-btn" onclick="closeCartModal()">
+              <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="cart-header-center">
+              <h2 class="cart-modal-title">
+                Carrinho (<span id="cartItemCount">0</span>)
+              </h2>
+              <a href="#" class="cart-add-address">Adicionar endereço</a>
+            </div>
+            <button class="cart-edit-btn" onclick="toggleEditMode()">
+              Editar
+            </button>
+          </div>
+        </div>
+
+        <div id="cartItems" class="cart-items">
+          <!-- Items will be populated by JavaScript -->
+        </div>
+
+        <div id="emptyCart" class="empty-cart">
+          <i data-lucide="shopping-cart"></i>
+          <p>Seu carrinho está vazio</p>
+        </div>
+
+        <div id="cartFooter" class="cart-footer" style="display: none">
+          <div class="cart-footer-top">
+            <div class="cart-footer-left">
+              <div class="cart-select-all">
+                <div class="cart-select-all-top">
+                  <div
+                    class="cart-select-all-checkbox"
+                    id="selectAllCheckbox"
+                    onclick="toggleSelectAll()"
+                  ></div>
+                  <label
+                    class="cart-select-all-label"
+                    onclick="toggleSelectAll()"
+                    >Tudo</label
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="cart-footer-right">
+              <div class="cart-total">
+                <span class="cart-total-price" id="cartTotalPrice"
+                  >R$ 0,00</span
+                >
+                <span class="cart-free-shipping">Frete grátis</span>
+              </div>
+              <button class="cart-checkout-btn" onclick="checkoutCart()">
+                <span>Finalizar</span>
+                <span>compra (<span id="checkoutItemCount">0</span>)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Checkout/Resumo do Pedido -->
+    <div
+      class="modal-overlay"
+      id="checkoutModal"
+      onclick="closeCheckoutModalOnOverlay(event)"
+    >
+      <div class="checkout-modal-content" onclick="event.stopPropagation()">
+        <!-- Cabeçalho -->
+        <div class="checkout-header">
+          <button class="checkout-back-btn" onclick="closeCheckoutModal()">
+            <i data-lucide="arrow-left"></i>
+          </button>
+          <h2 class="checkout-title">Resumo do pedido</h2>
+          <div style="width: 24px"></div>
+        </div>
+
+        <!-- Banner de Alerta -->
+        <div class="checkout-alert">
+          <span>Reembolso automático por atraso na coleta</span>
+          <i data-lucide="chevron-right"></i>
+        </div>
+
+        <!-- Ações Principais -->
+        <div class="checkout-actions">
+          <button class="checkout-action-btn" onclick="openAddressModal()">
+            <i data-lucide="plus"></i>
+            <span id="addressBtnText">Adicionar endereço de entrega</span>
+          </button>
+          <button class="checkout-action-btn" onclick="openCpfModal()">
+            <i data-lucide="plus"></i>
+            <span id="cpfBtnText">Adicionar CPF</span>
+          </button>
+        </div>
+
+        <!-- Separador Colorido -->
+        <div class="checkout-divider"></div>
+
+        <!-- Container de Produtos (dinâmico) -->
+        <div id="checkoutProductsContainer"></div>
+
+        <!-- Seção de Desconto -->
+        <div class="checkout-discount-section">
+          <i
+            data-lucide="zap"
+            style="color: #ff0050; width: 20px; height: 20px"
+          ></i>
+          <span>Desconto do TikTok Shop</span>
+        </div>
+
+        <!-- Resumo do Pedido (expansível) -->
+        <div class="checkout-summary">
+          <div
+            class="checkout-summary-header"
+            onclick="toggleCheckoutSummary()"
+          >
+            <span>Resumo do pedido</span>
+            <i
+              data-lucide="chevron-down"
+              id="checkoutSummaryIcon"
+              style="transform: rotate(180deg); transition: transform 0.3s"
+            ></i>
+          </div>
+          <div
+            class="checkout-summary-content open"
+            id="checkoutSummaryContent"
+          >
+            <div class="checkout-summary-row">
+              <span>Subtotal</span>
+              <span id="checkoutSubtotal">R$ 0,00</span>
+            </div>
+            <div class="checkout-summary-row">
+              <span>Frete</span>
+              <span class="checkout-free-shipping">Grátis</span>
+            </div>
+            <div class="checkout-summary-row checkout-summary-total">
+              <span>Total</span>
+              <span class="checkout-total-price" id="checkoutTotal"
+                >R$ 0,00</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Botão de Finalizar -->
+        <div class="checkout-footer">
+          <div class="checkout-footer-info">
+            <div class="checkout-footer-label">Total</div>
+            <div class="checkout-footer-price" id="checkoutFooterTotal">
+              R$ 0,00
+            </div>
+          </div>
+          <button class="checkout-finish-btn" onclick="goToCheckout()">
+            Fazer pedido
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goToStore()">
+        <i data-lucide="house" class="nav-icon"></i>
+        <span class="nav-text">Loja</span>
+      </button>
+      <button class="nav-btn" onclick="openChat()">
+        <i data-lucide="message-circle" class="nav-icon"></i>
+        <span class="nav-text">Chat</span>
+      </button>
+      <button class="nav-btn nav-btn-cart" onclick="addToCart()">
+        <span class="nav-cart-text">Adicionar</span>
+        <span class="nav-cart-text">ao carrinho</span>
+      </button>
+      <button class="nav-btn nav-btn-buy" onclick="openPurchaseModal()">
+        <div class="nav-buy-content">
+          <span class="nav-buy-text">Comprar agora</span>
+          <span class="nav-buy-subtext">Frete Grátis</span>
+        </div>
+      </button>
+    </div>
+
+    <script>
+      // ========================================
+      // CONFIGURAÇÃO DE VARIÁVEIS GLOBAIS
+      // ========================================
+      let currentSlide = 0;
+      const totalSlides = 8;
+      let selectedColor = "Grafite";
+      let cartItems = []; // Changed to array to store cart items
+      let autoSlideInterval = null; // Interval para carrossel automático
+      let currentProduct = "iphone"; // Produto atual sendo exibido
+
+      // ========================================
+      // BANCO DE DADOS DE PRODUTOS
+      // ========================================
+      // Para adicionar novos produtos, adicione um objeto neste dicionário
+      // com todas as informações necessárias
+      // ========================================
+      const productsDatabase = {
+        iphone: {
+          nome: "Celular iPhone 13 Pro 128GB e 256GB Original Novo Lacrado com Garantia Apple de 1 ano",
+          imagens: [
+            "assets/compre2leve3.png",
+            "assets/iphone13-rosa-BeQ9qyF4.png",
+            "assets/iphone13-verde-BybGV3uE.png",
+            "assets/iphone13-azul-Cvk1XKya.png",
+          ],
+          preco: 32.5,
+          precoAntigo: 3999.0,
+          desconto: 97,
+          rating: 4.8,
+          avaliacoes: 1273,
+          vendidos: 27407,
+          vendedor: "Loja da Mary",
+        },
+        dewalt: {
+          nome: "Quadro Mágico Led de Desenhar",
+          imagens: [
+            "assets/quadroled.webp",
+            "assets/quadroled.webp",
+            "assets/quadroled.webp",
+            "assets/quadroled.webp",
+          ],
+          preco: 5.0,
+          precoAntigo: 250.0,
+          desconto: 92,
+          rating: 4.9,
+          avaliacoes: 2453,
+          vendidos: 1.375,
+          vendedor: "Brinquedos & Cia",
+        },
+        geladeira: {
+          nome: "Pelúcia Lontra Hora de Dormir que Respira",
+          imagens: [
+            "assets/lontra2.webp",
+            "assets/lontra2.webp",
+            "assets/lontra2.webp",
+            "assets/lontra2.webp",
+          ],
+          preco: 147.0,
+          precoAntigo: 230.0,
+          desconto: 36,
+          rating: 4.9,
+          avaliacoes: 892,
+          vendidos: 403,
+          vendedor: "Baby Mania",
+        },
+        tv: {
+          nome: "Brinquedo para Aprender Inglês Leitor de Cartas com Som",
+          imagens: [
+            "assets/brinquedoingles.webp",
+            "assets/brinquedoingles.webp",
+            "assets/brinquedoingles.webp",
+            "assets/brinquedoingles.webp",
+          ],
+          preco: 129.9,
+          precoAntigo: 200.0,
+          desconto: 35,
+          rating: 4.8,
+          avaliacoes: 1567,
+          vendidos: 959,
+          vendedor: "Loja da Mary",
+        },
+        lavadora: {
+          nome: "Brinquedo Blocos Magnéticos Minecraft de Construção",
+          imagens: [
+            "assets/minecraft.webp",
+            "assets/minecraft.webp",
+            "assets/minecraft.webp",
+            "assets/minecraft.webp",
+          ],
+          preco: 149.9,
+          precoAntigo: 300.0,
+          desconto: 50,
+          rating: 4.7,
+          avaliacoes: 645,
+          vendidos: 2.358,
+          vendedor: "Brinquedos Fun",
+        },
+      };
+
+      // ========================================
+      // FUNÇÕES DE GERENCIAMENTO DE CARRINHO
+      // ========================================
+
+      // ========================================
+      // FUNÇÕES DE GERENCIAMENTO DE CARRINHO
+      // ========================================
+
+      // Load cart from localStorage on page load
+      function loadCart() {
+        const savedCart = localStorage.getItem("cartItems");
+        if (savedCart) {
+          cartItems = JSON.parse(savedCart);
+        }
+        updateCartBadge();
+      }
+
+      // Save cart to localStorage
+      function saveCart() {
+        localStorage.setItem("cartItems", JSON.stringify(cartItems));
+      }
+
+      // Update cart badge
+      function updateCartBadge() {
+        const totalQuantity = cartItems.reduce(
+          (sum, item) => sum + item.quantidade,
+          0
+        );
+        document.getElementById("cartCount").textContent = totalQuantity;
+        document.getElementById("cartItemCount").textContent = totalQuantity;
+      }
+
+      // Estado do modal
+      let modalState = {
+        color: "Preto",
+        model: "Compre 1 Leve 2",
+        price: 95.64,
+        quantity: 1,
+        image: "assets/compre1leve2.png",
+      };
+
+      // ========================================
+      // FUNÇÕES DE GALERIA E CARROSSEL
+      // ========================================
+
+      // Galeria
+      function initGallery() {
+        const dotsContainer = document.getElementById("galleryDots");
+        for (let i = 0; i < totalSlides; i++) {
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          if (i === 0) dot.classList.add("active");
+          dot.onclick = () => goToSlide(i);
+          dotsContainer.appendChild(dot);
+        }
+
+        // Iniciar carrossel automático
+        startAutoSlide();
+      }
+
+      // Iniciar carrossel automático
+      function startAutoSlide() {
+        // Limpar intervalo anterior se existir
+        if (autoSlideInterval) {
+          clearInterval(autoSlideInterval);
+        }
+
+        // Trocar imagem a cada 3 segundos
+        autoSlideInterval = setInterval(() => {
+          changeSlide(1);
+        }, 3000);
+      }
+
+      // Parar carrossel automático
+      function stopAutoSlide() {
+        if (autoSlideInterval) {
+          clearInterval(autoSlideInterval);
+          autoSlideInterval = null;
+        }
+      }
+
+      function changeSlide(direction) {
+        currentSlide += direction;
+        if (currentSlide < 0) currentSlide = totalSlides - 1;
+        if (currentSlide >= totalSlides) currentSlide = 0;
+        updateGallery();
+
+        // Reiniciar timer quando usuário interagir
+        startAutoSlide();
+      }
+
+      function goToSlide(index) {
+        currentSlide = index;
+        updateGallery();
+
+        // Reiniciar timer quando usuário interagir
+        startAutoSlide();
+      }
+
+      function updateGallery() {
+        const gallery = document.getElementById("galleryImages");
+        gallery.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        const dots = document.querySelectorAll(".dot");
+        dots.forEach((dot, index) => {
+          dot.classList.toggle("active", index === currentSlide);
+        });
+      }
+
+      // ========================================
+      // FUNÇÕES DE NAVEGAÇÃO
+      // ========================================
+
+      // Navegação por seção
+      function scrollToSection(sectionId, clickedButton) {
+        const section = document.getElementById(sectionId);
+
+        if (!section) {
+          console.error("Seção não encontrada:", sectionId);
+          return;
+        }
+
+        const tabs = document.querySelectorAll(".tab");
+
+        // Atualiza tabs ativos
+        tabs.forEach((tab) => {
+          tab.classList.remove("active");
+        });
+
+        if (clickedButton) {
+          clickedButton.classList.add("active");
+        }
+
+        // Scroll suave
+        const offset = 120; // Header + tabs
+        const elementPosition = section.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+      }
+
+      // Seleção de cor
+      function selectColor(element) {
+        document.querySelectorAll(".color-option").forEach((option) => {
+          option.classList.remove("selected");
+        });
+        element.classList.add("selected");
+        selectedColor = element.getAttribute("data-color");
+      }
+
+      // Adicionar ao carrinho
+      function addToCart() {
+        // Abrir o modal de compra para o usuário escolher as opções
+        openPurchaseModal();
+      }
+
+      // Abrir modal de compra
+      function openPurchaseModal() {
+        document.getElementById("purchaseModal").classList.add("show");
+      }
+
+      // Fechar modal
+      function closeModal() {
+        document.getElementById("purchaseModal").classList.remove("show");
+      }
+
+      // Fechar modal ao clicar no overlay
+      function closeModalOnOverlay(event) {
+        if (event.target === event.currentTarget) {
+          closeModal();
+        }
+      }
+
+      // Seleção de cor no modal
+      function selectModalColor(element, imageSrc) {
+        document.querySelectorAll(".color-option-modal").forEach((option) => {
+          option.classList.remove("selected");
+        });
+        element.classList.add("selected");
+        modalState.color = element.getAttribute("data-color");
+        modalState.image = imageSrc;
+        document.getElementById("modalProductImage").src = imageSrc;
+      }
+
+      // Seleção de modelo
+      function selectModel(element) {
+        document.querySelectorAll(".model-option").forEach((option) => {
+          option.classList.remove("selected");
+        });
+        element.classList.add("selected");
+        modalState.model = element.getAttribute("data-model");
+        modalState.price = parseFloat(element.getAttribute("data-price"));
+
+        // Atualiza a imagem do modal com a imagem do modelo selecionado
+        const modelImage = element.querySelector("img");
+        if (modelImage) {
+          modalState.image = modelImage.src;
+          document.getElementById("modalProductImage").src = modelImage.src;
+        }
+
+        updateTotal();
+      }
+
+      // Diminuir quantidade
+      function decreaseQty() {
+        if (modalState.quantity > 1) {
+          modalState.quantity--;
+          document.getElementById("qtyInput").value = modalState.quantity;
+          updateTotal();
+        }
+      }
+
+      // Aumentar quantidade
+      function increaseQty() {
+        if (modalState.quantity < 10) {
+          modalState.quantity++;
+          document.getElementById("qtyInput").value = modalState.quantity;
+          updateTotal();
+        }
+      }
+
+      // Atualizar total
+      function updateTotal() {
+        const total = modalState.price * modalState.quantity;
+        document.getElementById(
+          "modalPrice"
+        ).textContent = `R$ ${modalState.price.toFixed(2).replace(".", ",")}`;
+        document.getElementById("buyNowPrice").textContent = `R$ ${total
+          .toFixed(2)
+          .replace(".", ",")}`;
+      }
+
+      // Adicionar ao carrinho do modal
+      function addToCartFromModal() {
+        const item = {
+          id: Date.now(),
+          nome: `Caderno de Adesivos 3D ${modalState.model}`,
+          cor: modalState.color,
+          preco: modalState.price,
+          precoAntigo: 119.0,
+          desconto: 60,
+          quantidade: modalState.quantity,
+          imagem: modalState.image,
+          total: modalState.price * modalState.quantity,
+        };
+
+        // Check if item already exists in cart (same model and color)
+        const existingItem = cartItems.find(
+          (cartItem) => cartItem.nome === item.nome && cartItem.cor === item.cor
+        );
+
+        if (existingItem) {
+          existingItem.quantidade += modalState.quantity;
+          existingItem.total = existingItem.preco * existingItem.quantidade;
+        } else {
+          cartItems.push(item);
+        }
+
+        saveCart();
+        updateCartBadge();
+        renderCartItems();
+
+        // Mostra notificação
+        const toast = document.getElementById("toast");
+        toast.textContent = "Produto adicionado ao carrinho!";
+        toast.classList.add("show");
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 2000);
+        closeModal();
+      }
+
+      // Comprar agora do modal
+      function buyNowFromModal() {
+        const item = {
+          id: Date.now(),
+          nome: `Caderno de Adesivos 3D ${modalState.model}`,
+          cor: modalState.color,
+          preco: modalState.price,
+          precoAntigo: 119.0,
+          desconto: 60,
+          quantidade: modalState.quantity,
+          imagem: modalState.image,
+          total: modalState.price * modalState.quantity,
+        };
+
+        // Limpa o carrinho e adiciona apenas este item
+        cartItems = [item];
+        saveCart();
+        updateCartBadge();
+
+        // Fecha o modal de compra e abre o checkout
+        closeModal();
+        openCheckoutModal();
+      }
+
+      // Comprar agora
+      function buyNow() {
+        const product = {
+          nome: "iPhone 13 Pro 128GB",
+          cor: selectedColor,
+          preco: 97.5,
+          precoAntigo: 3999.0,
+          desconto: 97,
+        };
+
+        // Salva no localStorage
+        localStorage.setItem("selectedProduct", JSON.stringify(product));
+
+        // Redireciona para página de checkout (você pode mudar a URL)
+        window.location.href = "/checkout.html";
+      }
+
+      // ========================================
+      // FUNÇÕES DE MODAIS (CARRINHO, LOJA, CHAT)
+      // ========================================
+
+      // Abrir modal do carrinho
+      function openCartModal() {
+        renderCartItems();
+        document.getElementById("cartModal").classList.add("show");
+      }
+
+      // Fechar modal do carrinho
+      function closeCartModal() {
+        document.getElementById("cartModal").classList.remove("show");
+      }
+
+      // Fechar modal do carrinho ao clicar no overlay
+      function closeCartModalOnOverlay(event) {
+        if (event.target === event.currentTarget) {
+          closeCartModal();
+        }
+      }
+
+      // Renderizar itens do carrinho
+      function renderCartItems() {
+        const cartItemsContainer = document.getElementById("cartItems");
+        const emptyCart = document.getElementById("emptyCart");
+        const cartFooter = document.getElementById("cartFooter");
+
+        if (cartItems.length === 0) {
+          cartItemsContainer.innerHTML = "";
+          emptyCart.style.display = "flex";
+          cartFooter.style.display = "none";
+          return;
+        }
+
+        emptyCart.style.display = "none";
+        cartFooter.style.display = "block";
+
+        let html = "";
+
+        // Group items by vendor
+        const vendorGroups = {};
+        cartItems.forEach((item, index) => {
+          const vendor = item.vendedor || "Loja da Mary";
+          if (!vendorGroups[vendor]) {
+            vendorGroups[vendor] = [];
+          }
+          vendorGroups[vendor].push({ ...item, index });
+        });
+
+        // Render each vendor section
+        Object.keys(vendorGroups).forEach((vendor, vendorIndex) => {
+          const items = vendorGroups[vendor];
+          const carrinhos = Math.floor(Math.random() * 50) + 10;
+
+          html += `
+            <div class="cart-vendor-section">
+              <div class="cart-vendor-header">
+                <div class="cart-vendor-left">
+                  <input type="checkbox" class="cart-vendor-checkbox" data-vendor="${vendor}" checked onchange="toggleVendorItems('${vendor}')">
+                  <span class="cart-vendor-name">${vendor}</span>
+                  <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: #999;"></i>
+                </div>
+                <span class="cart-shipping-badge">Desconto de envio disponível</span>
+              </div>
+          `;
+
+          items.forEach((item) => {
+            const desconto = Math.round(
+              ((item.precoAntigo - item.preco) / item.precoAntigo) * 100
+            );
+            const economiaPorItem = (item.precoAntigo - item.preco).toFixed(2);
+            const economiaTotal = (economiaPorItem * item.quantidade).toFixed(
+              2
+            );
+
+            html += `
+              <div class="cart-item">
+                <input type="checkbox" class="cart-item-checkbox" data-index="${
+                  item.index
+                }" data-vendor="${vendor}" checked onchange="updateCartTotal()">
+                
+                <div class="cart-item-image-wrapper">
+                  <img src="${item.imagem}" alt="${
+              item.nome
+            }" class="cart-item-image" />
+                </div>
+                
+                <div class="cart-item-info">
+                  <div class="cart-item-name">${item.nome}</div>
+                  
+                  <div class="cart-item-price">R$ ${item.preco
+                    .toFixed(2)
+                    .replace(".", ",")}</div>
+                  
+                  <div class="cart-item-old-price-wrapper">
+                    <span class="cart-item-old-price">R$ ${item.precoAntigo
+                      .toFixed(2)
+                      .replace(".", ",")}</span>
+                    <span class="cart-item-discount">-${desconto}%</span>
+                  </div>
+                  
+                  <div class="cart-social-proof">Em outros ${carrinhos} carrinhos</div>
+                  
+                  <div class="cart-price-alert">
+                    <i data-lucide="trending-down"></i>
+                    <span>R$ ${economiaTotal.replace(
+                      ".",
+                      ","
+                    )} mais barato desde que foi adicionado</span>
+                  </div>
+                  
+                  <div class="cart-item-controls">
+                    <button class="cart-qty-btn" onclick="decreaseCartItemQty(${
+                      item.index
+                    })">
+                      <i data-lucide="minus"></i>
+                    </button>
+                    <span class="cart-qty-display">${item.quantidade}</span>
+                    <button class="cart-qty-btn" onclick="increaseCartItemQty(${
+                      item.index
+                    })">
+                      <i data-lucide="plus"></i>
+                    </button>
+                    <button class="cart-remove-btn" onclick="removeFromCart(${
+                      item.index
+                    })" title="Remover">
+                      <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `</div>`;
+        });
+
+        // Add protection section
+        html += `
+          <div class="cart-protection-section">
+            <div class="cart-protection-header">
+              <i data-lucide="shield-check" class="cart-protection-icon"></i>
+              <span class="cart-protection-title">Proteção do cliente</span>
+            </div>
+            <div class="cart-protection-items">
+              <div class="cart-protection-item">
+                <span class="cart-protection-check">✓</span>
+                <span>Pagamento seguro</span>
+              </div>
+              <div class="cart-protection-item">
+                <span class="cart-protection-check">✓</span>
+                <span>Reembolso automático</span>
+              </div>
+              <div class="cart-protection-item">
+                <span class="cart-protection-check">✓</span>
+                <span>Cupons</span>
+              </div>
+              <div class="cart-protection-item">
+                <span class="cart-protection-check">✓</span>
+                <span>Devolução grátis</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        cartItemsContainer.innerHTML = html;
+
+        // Re-initialize Lucide icons for dynamically added content
+        lucide.createIcons();
+
+        // Update total after rendering
+        updateCartTotal();
+      }
+
+      // Update cart total based on selected items
+      function updateCartTotal() {
+        let total = 0;
+        let selectedCount = 0;
+        const selectedCheckboxes = document.querySelectorAll(
+          ".cart-item-checkbox:checked"
+        );
+
+        selectedCheckboxes.forEach((checkbox) => {
+          const index = parseInt(checkbox.dataset.index);
+          if (cartItems[index]) {
+            total += cartItems[index].total;
+            selectedCount++;
+          }
+        });
+
+        document.getElementById("cartTotalPrice").textContent = `R$ ${total
+          .toFixed(2)
+          .replace(".", ",")}`;
+
+        document.getElementById("checkoutItemCount").textContent =
+          selectedCount;
+
+        // Update select all checkbox state
+        updateSelectAllState();
+      }
+
+      // Update select all checkbox state
+      function updateSelectAllState() {
+        const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+        const allItemCheckboxes = document.querySelectorAll(
+          ".cart-item-checkbox"
+        );
+        const checkedItemCheckboxes = document.querySelectorAll(
+          ".cart-item-checkbox:checked"
+        );
+
+        if (allItemCheckboxes.length === 0) {
+          selectAllCheckbox.classList.remove("checked");
+        } else {
+          if (allItemCheckboxes.length === checkedItemCheckboxes.length) {
+            selectAllCheckbox.classList.add("checked");
+          } else {
+            selectAllCheckbox.classList.remove("checked");
+          }
+        }
+      }
+
+      // Toggle vendor items
+      function toggleVendorItems(vendor) {
+        const vendorCheckbox = document.querySelector(
+          `.cart-vendor-checkbox[data-vendor="${vendor}"]`
+        );
+        const isChecked = vendorCheckbox.checked;
+
+        const itemCheckboxes = document.querySelectorAll(
+          `.cart-item-checkbox[data-vendor="${vendor}"]`
+        );
+
+        itemCheckboxes.forEach((checkbox) => {
+          checkbox.checked = isChecked;
+        });
+
+        updateCartTotal();
+        updateSelectAllState();
+      }
+
+      // Toggle select all
+      function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+        const isChecked = selectAllCheckbox.classList.contains("checked");
+
+        if (isChecked) {
+          selectAllCheckbox.classList.remove("checked");
+        } else {
+          selectAllCheckbox.classList.add("checked");
+        }
+
+        const allCheckboxes = document.querySelectorAll(
+          ".cart-item-checkbox, .cart-vendor-checkbox"
+        );
+        allCheckboxes.forEach((checkbox) => {
+          checkbox.checked = !isChecked;
+        });
+        updateCartTotal();
+      }
+
+      // Toggle edit mode
+      function toggleEditMode() {
+        console.log("Edit mode toggled");
+      }
+
+      // Diminuir quantidade do item no carrinho
+      function decreaseCartItemQty(index) {
+        if (cartItems[index].quantidade > 1) {
+          cartItems[index].quantidade--;
+          cartItems[index].total =
+            cartItems[index].preco * cartItems[index].quantidade;
+          saveCart();
+          updateCartBadge();
+          renderCartItems();
+        }
+      }
+
+      // Aumentar quantidade do item no carrinho
+      function increaseCartItemQty(index) {
+        if (cartItems[index].quantidade < 10) {
+          cartItems[index].quantidade++;
+          cartItems[index].total =
+            cartItems[index].preco * cartItems[index].quantidade;
+          saveCart();
+          updateCartBadge();
+          renderCartItems();
+        }
+      }
+
+      // Remover item do carrinho
+      function removeCartItem(index) {
+        cartItems.splice(index, 1);
+        saveCart();
+        updateCartBadge();
+        renderCartItems();
+      }
+
+      // Alias para removeCartItem
+      function removeFromCart(index) {
+        removeCartItem(index);
+      }
+
+      // Finalizar compra do carrinho
+      function checkoutCart() {
+        closeCartModal();
+        openCheckoutModal();
+      }
+
+      // Checkout Modal Functions
+      function openCheckoutModal() {
+        renderCheckoutItems();
+        document.getElementById("checkoutModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeCheckoutModal() {
+        document.getElementById("checkoutModal").classList.remove("show");
+        document.body.style.overflow = "";
+      }
+
+      function closeCheckoutModalOnOverlay(event) {
+        if (event.target.id === "checkoutModal") {
+          closeCheckoutModal();
+        }
+      }
+
+      function renderCheckoutItems() {
+        const container = document.getElementById("checkoutProductsContainer");
+        let html = "";
+        let subtotal = 0;
+
+        // Agrupar por vendedor
+        const vendorGroups = {};
+        cartItems.forEach((item, index) => {
+          const vendor = item.vendedor || "Loja da Mary";
+          if (!vendorGroups[vendor]) {
+            vendorGroups[vendor] = [];
+          }
+          vendorGroups[vendor].push({ ...item, index });
+          subtotal += item.total;
+        });
+
+        // Renderizar cada grupo de vendedor
+        Object.keys(vendorGroups).forEach((vendor) => {
+          const items = vendorGroups[vendor];
+
+          html += `
+            <div class="checkout-product-card">
+              <div class="checkout-vendor-header">
+                <span class="checkout-vendor-name">${vendor}</span>
+                <a href="#" class="checkout-add-note"></a>
+              </div>
+
+              <div class="checkout-rating">
+                <span style="color: #ffc107; font-size: 16px; line-height: 1;">★</span>
+                <span>Muito bem avaliado! 5.0/5.0</span>
+              </div>
+
+              <div class="checkout-shipping-estimate">
+                <i data-lucide="truck" style="width: 16px; height: 16px; color: #4caf50;"></i>
+                <span>Entrega estimada: <strong>3-7 dias úteis</strong></span>
+              </div>
+          `;
+
+          items.forEach((item) => {
+            const desconto = Math.round(
+              ((item.precoAntigo - item.preco) / item.precoAntigo) * 100
+            );
+
+            html += `
+              <div class="checkout-product-row" style="margin-top: 15px;">
+                <div class="checkout-product-image-wrapper">
+                  <img src="${item.imagem}" alt="${
+              item.nome
+            }" class="checkout-product-image">
+                </div>
+
+                <div class="checkout-product-details">
+                  <div class="checkout-product-name">${item.nome}</div>
+                  
+                  <div class="checkout-return">
+                    <img src="assets/commitment_8734051.png" alt="commitment" style="width: 16px; height: 16px;">
+                    <span>Devolução gratuita</span>
+                  </div>
+
+                  <div class="checkout-price-row">
+                    <div class="checkout-prices">
+                      <span class="checkout-current-price">R$ ${item.preco
+                        .toFixed(2)
+                        .replace(".", ",")}</span>
+                      <span class="checkout-old-price">R$ ${item.precoAntigo
+                        .toFixed(2)
+                        .replace(".", ",")}</span>
+                      <span class="checkout-discount-badge">-${desconto}%</span>
+                    </div>
+                  </div>
+
+                  <div class="checkout-quantity">
+                    <button class="checkout-qty-btn" onclick="decreaseCheckoutQty(${
+                      item.index
+                    })">
+                      <i data-lucide="minus"></i>
+                    </button>
+                    <span class="checkout-qty-display" data-index="${
+                      item.index
+                    }">${item.quantidade}</span>
+                    <button class="checkout-qty-btn" onclick="increaseCheckoutQty(${
+                      item.index
+                    })">
+                      <i data-lucide="plus"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `</div>`;
+        });
+
+        container.innerHTML = html;
+
+        // Atualizar totais
+        updateCheckoutTotals(subtotal);
+
+        // Re-inicializar ícones do Lucide
+        lucide.createIcons();
+      }
+
+      function updateCheckoutTotals(subtotal) {
+        const subtotalFormatted = `R$ ${subtotal.toFixed(2).replace(".", ",")}`;
+
+        document.getElementById("checkoutSubtotal").textContent =
+          subtotalFormatted;
+        document.getElementById("checkoutTotal").textContent =
+          subtotalFormatted;
+        document.getElementById("checkoutFooterTotal").textContent =
+          subtotalFormatted;
+      }
+
+      function decreaseCheckoutQty(index) {
+        if (cartItems[index].quantidade > 1) {
+          cartItems[index].quantidade--;
+          cartItems[index].total =
+            cartItems[index].preco * cartItems[index].quantidade;
+          saveCart();
+          renderCheckoutItems();
+          updateCartBadge();
+        }
+      }
+
+      function increaseCheckoutQty(index) {
+        if (cartItems[index].quantidade < 10) {
+          cartItems[index].quantidade++;
+          cartItems[index].total =
+            cartItems[index].preco * cartItems[index].quantidade;
+          saveCart();
+          renderCheckoutItems();
+          updateCartBadge();
+        }
+      }
+
+      function toggleCheckoutSummary() {
+        const content = document.getElementById("checkoutSummaryContent");
+        const icon = document.getElementById("checkoutSummaryIcon");
+        content.classList.toggle("open");
+
+        if (content.classList.contains("open")) {
+          icon.style.transform = "rotate(180deg)";
+        } else {
+          icon.style.transform = "rotate(0deg)";
+        }
+      }
+
+      // Inicializar resumo do pedido já expandido
+      window.addEventListener("DOMContentLoaded", function () {
+        const icon = document.getElementById("checkoutSummaryIcon");
+        if (icon) {
+          icon.style.transform = "rotate(180deg)";
+        }
+      });
+
+      // Função para expandir/colapsar itens do footer
+      function toggleFooterItem(element) {
+        element.classList.toggle("open");
+      }
+
+      // Ir para a loja
+      function goToStore() {
+        document.getElementById("storeModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeStoreModal() {
+        document.getElementById("storeModal").classList.remove("show");
+        document.body.style.overflow = "auto";
+      }
+
+      // Abrir chat
+      function openChat() {
+        document.getElementById("chatModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeChatModal() {
+        document.getElementById("chatModal").classList.remove("show");
+        document.body.style.overflow = "auto";
+      }
+
+      function enviarPergunta(pergunta) {
+        const chatMessages = document.getElementById("chatMessages");
+
+        // Adiciona mensagem do usuário
+        const userMessage = document.createElement("div");
+        userMessage.className = "chat-message";
+        userMessage.style.justifyContent = "flex-end";
+        userMessage.innerHTML = `
+          <div class="chat-message-bubble" style="background: #2196f3; border-color: #2196f3; margin-left: auto;">
+            <p class="chat-message-text" style="color: white;">${pergunta}</p>
+          </div>
+        `;
+        chatMessages.appendChild(userMessage);
+
+        // Respostas automáticas
+        const respostas = {
+          "Quanto tempo tenho de garantia?":
+            "Todos os nossos produtos têm garantia de 1 ano do fabricante. Além disso, você conta com 7 dias para devolução conforme o Código de Defesa do Consumidor.",
+          "Na primeira compra tem frete grátis?":
+            "Sim! Na primeira compra o frete é totalmente grátis para todo o Brasil. Aproveite essa oferta especial!",
+          "Como funciona a devolução do produto?":
+            "Você tem até 7 dias após o recebimento para solicitar a devolução. Basta entrar em contato conosco e enviaremos as instruções. O processo é simples e rápido!",
+        };
+
+        // Simula digitação e adiciona resposta
+        setTimeout(() => {
+          const botMessage = document.createElement("div");
+          botMessage.className = "chat-message";
+          botMessage.innerHTML = `
+            <div class="chat-message-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+              </svg>
+            </div>
+            <div class="chat-message-bubble">
+              <p class="chat-message-text">${
+                respostas[pergunta] ||
+                "Obrigado pela pergunta! Um atendente responderá em breve."
+              }</p>
+            </div>
+          `;
+          chatMessages.appendChild(botMessage);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // ========================================
+      // FUNÇÕES DE COMPARTILHAMENTO E DENÚNCIA
+      // ========================================
+
+      // Compartilhar produto
+      function compartilhar() {
+        if (navigator.share) {
+          navigator
+            .share({
+              title: "iPhone 13 Pro",
+              text: "Confira esta oferta incrível de iPhone 13 Pro com -97% de desconto!",
+              url: window.location.href,
+            })
+            .catch(() => {
+              copiarLink();
+            });
+        } else {
+          copiarLink();
+        }
+      }
+
+      function copiarLink() {
+        navigator.clipboard.writeText(window.location.href);
+        showToast("Link copiado para a área de transferência!");
+      }
+
+      // Denunciar site
+      let selectedReportReason = null;
+
+      function denunciar() {
+        document.getElementById("reportModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeReportModal() {
+        document.getElementById("reportModal").classList.remove("show");
+        document.body.style.overflow = "auto";
+
+        // Reset selections
+        selectedReportReason = null;
+        document.querySelectorAll(".report-option").forEach((option) => {
+          option.classList.remove("selected");
+        });
+        document.getElementById("reportSubmitBtn").disabled = true;
+      }
+
+      function selectReportOption(element, reason) {
+        // Remove seleção anterior
+        document.querySelectorAll(".report-option").forEach((option) => {
+          option.classList.remove("selected");
+        });
+
+        // Adiciona nova seleção
+        element.classList.add("selected");
+        selectedReportReason = reason;
+
+        // Habilita botão
+        document.getElementById("reportSubmitBtn").disabled = false;
+      }
+
+      function submitReport() {
+        if (selectedReportReason) {
+          closeReportModal();
+          showToast("Denúncia enviada!");
+          // Não envia para nenhum servidor, apenas mostra a mensagem
+        }
+      }
+
+      // ========================================
+      // FUNÇÕES DE TROCA DE PRODUTO
+      // ========================================
+      // Função para carregar um produto diferente na página
+      function loadProduct(productId) {
+        const product = productsDatabase[productId];
+
+        if (!product) {
+          console.error("Produto não encontrado:", productId);
+          return;
+        }
+
+        currentProduct = productId;
+
+        // Atualizar título do produto
+        document.querySelector(".product-title").textContent = product.nome;
+
+        // Atualizar preços
+        document.querySelector(".price").textContent = `R$ ${product.preco
+          .toFixed(2)
+          .replace(".", ",")}`;
+        document.querySelector(
+          ".old-price"
+        ).textContent = `R$ ${product.precoAntigo
+          .toFixed(2)
+          .replace(".", ",")}`;
+
+        // Atualizar badge de desconto
+        document.querySelector(
+          ".discount-badge"
+        ).textContent = `-${product.desconto}%`;
+
+        // Atualizar rating e vendidos
+        const ratingText = document.querySelector(".rating span:nth-child(2)");
+        ratingText.textContent = `(${product.avaliacoes})`;
+
+        const vendidosText = document.querySelector(
+          ".rating span:nth-child(3)"
+        );
+        vendidosText.textContent = `• ${product.vendidos.toLocaleString(
+          "pt-BR"
+        )} vendidos`;
+
+        // Atualizar imagens do carrossel
+        const galleryImages = document.getElementById("galleryImages");
+        galleryImages.innerHTML = "";
+
+        product.imagens.forEach((imgSrc, index) => {
+          const imgDiv = document.createElement("div");
+          imgDiv.className = "gallery-image";
+          imgDiv.innerHTML = `<img src="${imgSrc}" alt="${product.nome}" />`;
+          galleryImages.appendChild(imgDiv);
+        });
+
+        // Resetar carrossel para primeira imagem
+        currentSlide = 0;
+        updateGallery();
+
+        // Scroll suave para o topo
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Mostrar toast
+        showToast(`Visualizando: ${product.nome.substring(0, 50)}...`);
+
+        // Reinicializar ícones Lucide
+        lucide.createIcons();
+      }
+
+      // Função para adicionar produto recomendado ao carrinho
+      function addRecommendedToCart(productId) {
+        const product = productsDatabase[productId];
+
+        if (!product) {
+          console.error("Produto não encontrado:", productId);
+          return;
+        }
+
+        const preco = parseFloat(product.preco);
+        const precoAntigo = parseFloat(product.precoAntigo);
+
+        const cartItem = {
+          nome: product.nome,
+          preco: preco,
+          precoAntigo: precoAntigo,
+          desconto: product.desconto,
+          quantidade: 1,
+          imagem: product.imagens[0],
+          vendedor: product.vendedor,
+          total: preco * 1,
+        };
+
+        // Verificar se o produto já está no carrinho
+        const existingIndex = cartItems.findIndex(
+          (item) => item.nome === cartItem.nome
+        );
+
+        if (existingIndex >= 0) {
+          cartItems[existingIndex].quantidade += 1;
+          cartItems[existingIndex].total =
+            parseFloat(cartItems[existingIndex].preco) *
+            cartItems[existingIndex].quantidade;
+        } else {
+          cartItems.push(cartItem);
+        }
+
+        saveCart();
+        updateCartBadge();
+        showToast("Produto adicionado ao carrinho!");
+      }
+
+      // ========================================
+      // FUNÇÕES DE NOTIFICAÇÃO
+      // ========================================
+      // Função para mostrar notificação toast
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3000);
+      }
+
+      // ========================================
+      // FUNÇÃO DE CHECKOUT
+      // ========================================
+      function goToCheckout() {
+        // Validar se os dados obrigatórios foram preenchidos
+        const savedCpf = localStorage.getItem("customerCpf");
+        const savedAddress = localStorage.getItem("deliveryAddress");
+
+        if (!savedCpf) {
+          showToast("Por favor, preencha o CPF antes de continuar!");
+          return;
+        }
+
+        if (!savedAddress) {
+          showToast(
+            "Por favor, preencha o endereço de entrega antes de continuar!"
+          );
+          return;
+        }
+
+        // Salvar carrinho no localStorage
+        saveCart();
+
+        // Redirecionar para página de checkout
+        window.location.href = "checkout.html";
+      }
+
+      // ========================================
+      // FUNÇÕES DE VÍDEOS DOS CRIADORES
+      // ========================================
+      function playCreatorVideo(videoContainer) {
+        const video = videoContainer.querySelector("video");
+        const playIcon = videoContainer.querySelector(".creator-play-icon");
+
+        if (video.paused) {
+          // Pausar todos os outros vídeos
+          document.querySelectorAll(".creator-video video").forEach((v) => {
+            if (v !== video) {
+              v.pause();
+              v.parentElement.querySelector(
+                ".creator-play-icon"
+              ).style.display = "flex";
+            }
+          });
+
+          video.play();
+          playIcon.style.display = "none";
+        } else {
+          video.pause();
+          playIcon.style.display = "flex";
+        }
+
+        // Quando o vídeo terminar, mostrar o ícone de play novamente
+        video.onended = function () {
+          playIcon.style.display = "flex";
+        };
+      }
+
+      // ========================================
+      // FUNÇÕES DE FORMULÁRIOS (CPF E ENDEREÇO)
+      // ========================================
+
+      // Funções de Endereço
+      function openAddressModal() {
+        // Carregar endereço salvo se existir
+        const savedAddress = localStorage.getItem("deliveryAddress");
+        if (savedAddress) {
+          const address = JSON.parse(savedAddress);
+          document.getElementById("cep").value = address.cep || "";
+          document.getElementById("rua").value = address.rua || "";
+          document.getElementById("numero").value = address.numero || "";
+          document.getElementById("complemento").value =
+            address.complemento || "";
+          document.getElementById("bairro").value = address.bairro || "";
+          document.getElementById("cidade").value = address.cidade || "";
+          document.getElementById("estado").value = address.estado || "";
+        }
+        document.getElementById("addressModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeAddressModal() {
+        document.getElementById("addressModal").classList.remove("show");
+        document.body.style.overflow = "auto";
+      }
+
+      function saveAddress() {
+        const address = {
+          cep: document.getElementById("cep").value,
+          rua: document.getElementById("rua").value,
+          numero: document.getElementById("numero").value,
+          complemento: document.getElementById("complemento").value,
+          bairro: document.getElementById("bairro").value,
+          cidade: document.getElementById("cidade").value,
+          estado: document.getElementById("estado").value,
+        };
+
+        // Validação básica
+        if (
+          !address.cep ||
+          !address.rua ||
+          !address.numero ||
+          !address.bairro ||
+          !address.cidade ||
+          !address.estado
+        ) {
+          showToast("Preencha todos os campos obrigatórios!");
+          return;
+        }
+
+        // Salvar no localStorage
+        localStorage.setItem("deliveryAddress", JSON.stringify(address));
+
+        // Atualizar texto do botão
+        document.getElementById(
+          "addressBtnText"
+        ).textContent = `${address.rua}, ${address.numero} - ${address.cidade}/${address.estado}`;
+
+        closeAddressModal();
+        showToast("Endereço salvo com sucesso!");
+      }
+
+      // Funções de CPF
+      function openCpfModal() {
+        // Carregar CPF salvo se existir
+        const savedCpf = localStorage.getItem("customerCpf");
+        if (savedCpf) {
+          const cpfData = JSON.parse(savedCpf);
+          document.getElementById("cpfInput").value = cpfData.cpf || "";
+          document.getElementById("nomeCompleto").value = cpfData.nome || "";
+          document.getElementById("telefoneInput").value =
+            cpfData.telefone || "";
+        }
+        document.getElementById("cpfModal").classList.add("show");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeCpfModal() {
+        document.getElementById("cpfModal").classList.remove("show");
+        document.body.style.overflow = "auto";
+      }
+
+      function saveCpf() {
+        const cpf = document.getElementById("cpfInput").value;
+        const nome = document.getElementById("nomeCompleto").value;
+        const telefone = document.getElementById("telefoneInput").value;
+
+        // Validação básica
+        if (!cpf || !nome || !telefone) {
+          showToast("Preencha todos os campos!");
+          return;
+        }
+
+        const cpfData = {
+          cpf: cpf,
+          nome: nome,
+          telefone: telefone,
+        };
+
+        // Salvar no localStorage
+        localStorage.setItem("customerCpf", JSON.stringify(cpfData));
+
+        // Atualizar texto do botão
+        document.getElementById("cpfBtnText").textContent = `CPF: ${cpf}`;
+
+        closeCpfModal();
+        showToast("CPF salvo com sucesso!");
+      }
+
+      // Carregar dados salvos ao abrir checkout
+      function loadCheckoutData() {
+        const savedAddress = localStorage.getItem("deliveryAddress");
+        if (savedAddress) {
+          const address = JSON.parse(savedAddress);
+          document.getElementById(
+            "addressBtnText"
+          ).textContent = `${address.rua}, ${address.numero} - ${address.cidade}/${address.estado}`;
+        }
+
+        const savedCpf = localStorage.getItem("customerCpf");
+        if (savedCpf) {
+          const cpfData = JSON.parse(savedCpf);
+          document.getElementById(
+            "cpfBtnText"
+          ).textContent = `CPF: ${cpfData.cpf}`;
+        }
+      }
+
+      // Inicializar galeria quando a página carrega
+      window.addEventListener("DOMContentLoaded", function () {
+        initGallery();
+        loadCart();
+        loadCheckoutData();
+      });
+    </script>
+
+    <!-- Store Modal -->
+    <div
+      class="store-modal-overlay"
+      id="storeModal"
+      onclick="closeStoreModal()"
+    >
+      <div class="store-modal-content" onclick="event.stopPropagation()">
+        <div class="store-header">
+          <img
+            src="assets/logomary.png"
+            alt="YDTECH Store"
+            class="store-logo"
+          />
+          <div>
+            <h2 class="store-title">Loja da Mary</h2>
+            <div class="store-rating">
+              <span class="store-stars">★</span>
+              <span class="store-rating-number">4.8</span>
+              <span class="store-rating-count">(14,3mil avaliações)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="store-info-section">
+          <div class="store-info-item">
+            <div class="store-icon-wrapper">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <div>
+              <p class="store-info-label">Localização</p>
+              <p class="store-info-value">São Paulo, Brasil</p>
+            </div>
+          </div>
+
+          <div class="store-info-item">
+            <div class="store-icon-wrapper">
+              <i data-lucide="package"></i>
+            </div>
+            <div>
+              <p class="store-info-label">Produtos</p>
+              <p class="store-info-value">24 produtos disponíveis</p>
+            </div>
+          </div>
+
+          <div class="store-info-item">
+            <div class="store-icon-wrapper">
+              <i data-lucide="check-circle"></i>
+            </div>
+            <div>
+              <p class="store-info-label">Qualidade</p>
+              <p class="store-info-value">90% de avaliações positivas</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="store-about-section">
+          <h3 class="store-about-title">Sobre a loja</h3>
+          <p class="store-about-text">
+            Loja especializada em produtos de diversão e entretenimento.
+            Oferecemos frete grátis e devolução em até 30 dias. Atendimento
+            especializado para melhor experiência de compra.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div
+      class="report-modal-overlay"
+      id="reportModal"
+      onclick="closeReportModal()"
+    >
+      <div class="report-modal-content" onclick="event.stopPropagation()">
+        <div class="report-modal-header">
+          <h2 class="report-modal-title">Denunciar</h2>
+          <button class="report-modal-close" onclick="closeReportModal()">
+            ×
+          </button>
+        </div>
+
+        <div class="report-options" id="reportOptions">
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Produto falsificado')"
+          >
+            <span class="report-option-text">Produto falsificado</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Preço enganoso')"
+          >
+            <span class="report-option-text">Preço enganoso</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Descrição incorreta')"
+          >
+            <span class="report-option-text">Descrição incorreta</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Fraude ou golpe')"
+          >
+            <span class="report-option-text">Fraude ou golpe</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Conteúdo inapropriado')"
+          >
+            <span class="report-option-text">Conteúdo inapropriado</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Violação de propriedade intelectual')"
+          >
+            <span class="report-option-text"
+              >Violação de propriedade intelectual</span
+            >
+            <div class="report-option-check"></div>
+          </div>
+          <div class="report-option" onclick="selectReportOption(this, 'Spam')">
+            <span class="report-option-text">Spam</span>
+            <div class="report-option-check"></div>
+          </div>
+          <div
+            class="report-option"
+            onclick="selectReportOption(this, 'Outro motivo')"
+          >
+            <span class="report-option-text">Outro motivo</span>
+            <div class="report-option-check"></div>
+          </div>
+        </div>
+
+        <div class="report-modal-footer">
+          <button
+            class="report-submit-btn"
+            id="reportSubmitBtn"
+            disabled
+            onclick="submitReport()"
+          >
+            Denunciar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Address Modal -->
+    <div
+      class="form-modal-overlay"
+      id="addressModal"
+      onclick="closeAddressModal()"
+    >
+      <div class="form-modal-content" onclick="event.stopPropagation()">
+        <div class="form-modal-header">
+          <h2 class="form-modal-title">Adicionar Endereço</h2>
+          <button class="form-modal-close" onclick="closeAddressModal()">
+            ×
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CEP</label>
+          <input
+            type="text"
+            class="form-input"
+            id="cep"
+            placeholder="00000-000"
+            maxlength="9"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rua</label>
+          <input
+            type="text"
+            class="form-input"
+            id="rua"
+            placeholder="Digite a rua"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Número</label>
+          <input
+            type="text"
+            class="form-input"
+            id="numero"
+            placeholder="Digite o número"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Complemento (opcional)</label>
+          <input
+            type="text"
+            class="form-input"
+            id="complemento"
+            placeholder="Apto, bloco, etc"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bairro</label>
+          <input
+            type="text"
+            class="form-input"
+            id="bairro"
+            placeholder="Digite o bairro"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cidade</label>
+          <input
+            type="text"
+            class="form-input"
+            id="cidade"
+            placeholder="Digite a cidade"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <input
+            type="text"
+            class="form-input"
+            id="estado"
+            placeholder="UF"
+            maxlength="2"
+          />
+        </div>
+
+        <button class="form-submit-btn" onclick="saveAddress()">
+          Salvar Endereço
+        </button>
+      </div>
+    </div>
+
+    <!-- CPF Modal -->
+    <div class="form-modal-overlay" id="cpfModal" onclick="closeCpfModal()">
+      <div class="form-modal-content" onclick="event.stopPropagation()">
+        <div class="form-modal-header">
+          <h2 class="form-modal-title">Adicionar CPF</h2>
+          <button class="form-modal-close" onclick="closeCpfModal()">×</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CPF</label>
+          <input
+            type="text"
+            class="form-input"
+            id="cpfInput"
+            placeholder="000.000.000-00"
+            maxlength="14"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome Completo</label>
+          <input
+            type="text"
+            class="form-input"
+            id="nomeCompleto"
+            placeholder="Digite seu nome completo"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input
+            type="text"
+            class="form-input"
+            id="telefoneInput"
+            placeholder="(00) 00000-0000"
+            maxlength="15"
+          />
+        </div>
+
+        <button class="form-submit-btn" onclick="saveCpf()">Salvar CPF</button>
+      </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="chat-modal-overlay" id="chatModal" onclick="closeChatModal()">
+      <div class="chat-modal-content" onclick="event.stopPropagation()">
+        <div class="chat-header">
+          <div class="chat-header-left">
+            <div class="chat-avatar">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                ></path>
+              </svg>
+            </div>
+            <div>
+              <h2 class="chat-title">Chat de Atendimento</h2>
+              <p class="chat-status">Online agora</p>
+            </div>
+          </div>
+          <button class="chat-close-btn" onclick="closeChatModal()">×</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message">
+            <div class="chat-message-avatar">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                ></path>
+              </svg>
+            </div>
+            <div class="chat-message-bubble">
+              <p class="chat-message-text">
+                Olá! Sou o assistente virtual. Como posso ajudar você hoje?
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-questions">
+          <h3 class="chat-questions-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            Perguntas frequentes:
+          </h3>
+          <button
+            class="chat-question-btn"
+            onclick="enviarPergunta('Quanto tempo tenho de garantia?')"
+          >
+            🛡️ Quanto tempo tenho de garantia?
+          </button>
+          <button
+            class="chat-question-btn"
+            onclick="enviarPergunta('Na primeira compra tem frete grátis?')"
+          >
+            🚚 Na primeira compra tem frete grátis?
+          </button>
+          <button
+            class="chat-question-btn"
+            onclick="enviarPergunta('Como funciona a devolução do produto?')"
+          >
+            🔄 Como funciona a devolução do produto?
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+      lucide.createIcons();
+
+      // Event listeners para os tabs
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", function () {
+          const sectionId = this.getAttribute("data-section");
+          scrollToSection(sectionId, this);
+        });
+      });
+    </script>
+  </body>
+</html>
