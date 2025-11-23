@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "TikTok Shop com Webhook para PIX",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build needed - static HTML'"
+    "dev": "vercel dev"
   },
   "keywords": [
     "tiktok",
