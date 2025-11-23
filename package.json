@@ -4,7 +4,7 @@
   "description": "TikTok Shop com Webhook para PIX",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'Build completo'",
+    "build": "mkdir -p .vercel/output/static && cp *.html .vercel/output/static/ 2>/dev/null || true && cp -r assets .vercel/output/static/ 2>/dev/null || true",
     "test": "echo 'Teste webhook'"
   },
   "keywords": [
