@@ -1029,6 +1029,11 @@
             "📤 Enviando pedido pago para tabela pedidos:",
             formattedOrderData
           );
+          console.log("🔗 URL:", `${SUPABASE_URL}/rest/v1/pedidos`);
+          console.log("📌 Headers:", {
+            "Content-Type": "application/json",
+            "X-API-Key": SUPABASE_KEY?.substring(0, 10) + "...",
+          });
 
           const response = await fetch(`${SUPABASE_URL}/rest/v1/pedidos`, {
             method: "POST",
@@ -1053,7 +1058,10 @@
           console.log("API Response:", responseData);
 
           if (response.ok || response.status === 201) {
-            console.log("✅ Pedido pago enviado para Supabase com sucesso!");
+            console.log(
+              "✅ Pedido pago enviado para Supabase com sucesso!",
+              responseData
+            );
             return true;
           } else {
             console.error(
