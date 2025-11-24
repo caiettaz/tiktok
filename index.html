@@ -2787,11 +2787,37 @@
         font-size: 14px;
         color: #333;
         box-sizing: border-box;
+        transition: border-color 0.3s;
       }
 
       .form-input:focus {
         outline: none;
         border-color: #ff0050;
+      }
+
+      .form-input.missing {
+        border-color: #ff6b6b;
+        border-width: 2px;
+        background-color: rgba(255, 107, 107, 0.05);
+      }
+
+      .form-input.missing:focus {
+        border-color: #ff0050;
+        box-shadow: 0 0 0 3px rgba(255, 0, 80, 0.1);
+      }
+
+      .form-group-warning {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #ff6b6b;
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      .form-group.with-warning {
+        margin-bottom: 20px;
       }
 
       .form-submit-btn {
@@ -5315,8 +5341,52 @@
           document.getElementById("cidade").value = address.cidade || "";
           document.getElementById("estado").value = address.estado || "";
         }
+        
+        // Verificar campos faltantes e destacá-los
+        highlightMissingAddressFields();
+        
         document.getElementById("addressModal").classList.add("show");
         document.body.style.overflow = "hidden";
+      }
+
+      function highlightMissingAddressFields() {
+        const cepInput = document.getElementById("cep");
+        const ruaInput = document.getElementById("rua");
+        const numeroInput = document.getElementById("numero");
+        const bairroInput = document.getElementById("bairro");
+        const cidadeInput = document.getElementById("cidade");
+        const estadoInput = document.getElementById("estado");
+
+        // Limpar estilos anteriores
+        [cepInput, ruaInput, numeroInput, bairroInput, cidadeInput, estadoInput].forEach(input => {
+          input.classList.remove("missing");
+          const warning = input.parentElement.querySelector(".form-group-warning");
+          if (warning) warning.remove();
+          input.parentElement.classList.remove("with-warning");
+        });
+
+        // Verificar cada campo obrigatório e destacar os faltantes
+        const missingFields = [
+          { input: cepInput, label: "CEP obrigatório" },
+          { input: ruaInput, label: "Rua obrigatória" },
+          { input: numeroInput, label: "Número obrigatório" },
+          { input: bairroInput, label: "Bairro obrigatório" },
+          { input: cidadeInput, label: "Cidade obrigatória" },
+          { input: estadoInput, label: "Estado obrigatório" }
+        ];
+
+        missingFields.forEach(field => {
+          if (!field.input.value.trim()) {
+            field.input.classList.add("missing");
+            field.input.parentElement.classList.add("with-warning");
+            
+            // Adicionar aviso
+            const warning = document.createElement("div");
+            warning.className = "form-group-warning";
+            warning.innerHTML = `<span>✕</span><span>${field.label}</span>`;
+            field.input.parentElement.appendChild(warning);
+          }
+        });
       }
 
       function closeAddressModal() {
@@ -5409,8 +5479,48 @@
             cpfData.telefone || "";
           document.getElementById("emailInput").value = cpfData.email || "";
         }
+        
+        // Verificar campos faltantes e destacá-los
+        highlightMissingCpfFields();
+        
         document.getElementById("cpfModal").classList.add("show");
         document.body.style.overflow = "hidden";
+      }
+
+      function highlightMissingCpfFields() {
+        const cpfInput = document.getElementById("cpfInput");
+        const nomeInput = document.getElementById("nomeCompleto");
+        const telefoneInput = document.getElementById("telefoneInput");
+        const emailInput = document.getElementById("emailInput");
+
+        // Limpar estilos anteriores
+        [cpfInput, nomeInput, telefoneInput, emailInput].forEach(input => {
+          input.classList.remove("missing");
+          const warning = input.parentElement.querySelector(".form-group-warning");
+          if (warning) warning.remove();
+          input.parentElement.classList.remove("with-warning");
+        });
+
+        // Verificar cada campo e destacar os faltantes
+        const missingFields = [
+          { input: cpfInput, label: "CPF obrigatório" },
+          { input: nomeInput, label: "Nome completo obrigatório" },
+          { input: telefoneInput, label: "Telefone obrigatório" },
+          { input: emailInput, label: "Email obrigatório" }
+        ];
+
+        missingFields.forEach(field => {
+          if (!field.input.value.trim()) {
+            field.input.classList.add("missing");
+            field.input.parentElement.classList.add("with-warning");
+            
+            // Adicionar aviso
+            const warning = document.createElement("div");
+            warning.className = "form-group-warning";
+            warning.innerHTML = `<span>✕</span><span>${field.label}</span>`;
+            field.input.parentElement.appendChild(warning);
+          }
+        });
       }
 
       function closeCpfModal() {
