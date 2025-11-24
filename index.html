@@ -4892,16 +4892,51 @@
         // Validar se os dados obrigatórios foram preenchidos
         const savedCpf = localStorage.getItem("customerCpf");
         const savedAddress = localStorage.getItem("deliveryAddress");
+        const cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
 
-        if (!savedCpf) {
-          showToast("Por favor, preencha o CPF antes de continuar!");
+        // Validar carrinho
+        if (!cartItems || cartItems.length === 0) {
+          showToast("Seu carrinho está vazio!");
           return;
         }
 
+        // Validar CPF
+        if (!savedCpf) {
+          showToast("❌ Por favor, preencha o CPF antes de continuar!");
+          return;
+        }
+
+        // Validar campos de CPF
+        const cpfData = JSON.parse(savedCpf);
+        if (
+          !cpfData.cpf ||
+          !cpfData.nome ||
+          !cpfData.telefone ||
+          !cpfData.email
+        ) {
+          showToast("❌ Todos os campos de CPF são obrigatórios!");
+          return;
+        }
+
+        // Validar endereço
         if (!savedAddress) {
           showToast(
-            "Por favor, preencha o endereço de entrega antes de continuar!"
+            "❌ Por favor, preencha o endereço de entrega antes de continuar!"
           );
+          return;
+        }
+
+        // Validar campos de endereço
+        const addressData = JSON.parse(savedAddress);
+        if (
+          !addressData.cep ||
+          !addressData.rua ||
+          !addressData.numero ||
+          !addressData.bairro ||
+          !addressData.cidade ||
+          !addressData.estado
+        ) {
+          showToast("❌ Todos os campos de endereço são obrigatórios!");
           return;
         }
 

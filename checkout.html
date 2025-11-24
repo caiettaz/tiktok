@@ -919,7 +919,7 @@
           addressData = JSON.parse(savedAddress);
         }
 
-        // Armazenar dados do pedido
+        // Armazenar dados do pedido com estrutura correta
         const orderData = {
           order_id: pixData.order_id,
           transaction_id: pixData.transaction_id,
@@ -932,7 +932,15 @@
             phone: customerData.telefone || "",
             cpf: customerData.cpf || "",
           },
-          address: addressData,
+          address: {
+            cep: addressData.cep || "",
+            rua: addressData.rua || "",
+            numero: addressData.numero || "",
+            complemento: addressData.complemento || "",
+            bairro: addressData.bairro || "",
+            cidade: addressData.cidade || "",
+            estado: addressData.estado || "",
+          },
           items: cartItems,
           created_at: new Date().toISOString(),
         };
@@ -994,32 +1002,69 @@
       // ⭐ Enviar dados do pedido para Supabase com status atualizado
       async function sendPaidOrderToSupabase(orderData) {
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                Prefer: "return=representation",
-              },
-              body: JSON.stringify(orderData),
-            }
+          // Preparar dados formatados para a tabela pedidos
+          const formattedOrderData = {
+            pedido_id: orderData.order_id,
+            transacao_id: orderData.transaction_id,
+            pix_key: orderData.pix_key,
+            nome: orderData.customer?.name || "Cliente",
+            cpf: orderData.customer?.cpf || "",
+            email: orderData.customer?.email || "",
+            telefone: orderData.customer?.phone || "",
+            cep: orderData.address?.cep || "",
+            rua: orderData.address?.rua || "",
+            numero: orderData.address?.numero || "",
+            complemento: orderData.address?.complemento || "",
+            bairro: orderData.address?.bairro || "",
+            cidade: orderData.address?.cidade || "",
+            estado: orderData.address?.estado || "",
+            valor_total: orderData.amount,
+            total_itens: orderData.items?.length || 0,
+            itens: orderData.items || [],
+            status: orderData.status || "pix_paid",
+            pago_em: orderData.paid_at || new Date().toISOString(),
+          };
+
+          console.log(
+            "📤 Enviando pedido pago para tabela pedidos:",
+            formattedOrderData
           );
 
-          if (response.ok) {
-            console.log("Pedido pago enviado para Supabase com sucesso");
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/pedidos`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify(formattedOrderData),
+          });
+
+          console.log(`API Response Status: ${response.status}`);
+
+          let responseData;
+          try {
+            responseData = await response.json();
+          } catch (e) {
+            responseData = await response.text();
+          }
+
+          console.log("API Response:", responseData);
+
+          if (response.ok || response.status === 201) {
+            console.log("✅ Pedido pago enviado para Supabase com sucesso!");
             return true;
           } else {
             console.error(
-              "Erro ao enviar pedido para Supabase:",
-              response.status
+              "❌ Erro ao enviar pedido para Supabase:",
+              response.status,
+              responseData
             );
             return false;
           }
         } catch (error) {
-          console.error("Erro ao enviar dados:", error);
+          console.error("❌ Erro ao enviar dados:", error);
           return false;
         }
       }
@@ -1041,7 +1086,8 @@
           if (status === "approved") {
             // ✅ Pagamento aprovado!
             clearInterval(pollInterval);
-            showToast("✅ Pagamento confirmado!");
+            console.log("✅ Pagamento confirmado! Salvando no banco...");
+            showToast("✅ Pagamento confirmado! Salvando dados...");
 
             // Obter dados do pedido armazenado
             const orderDataStr = localStorage.getItem("currentOrderData");
@@ -1049,28 +1095,42 @@
               const orderData = JSON.parse(orderDataStr);
               orderData.status = "pix_paid";
               orderData.paid_at = new Date().toISOString();
-              orderData.updated_at = new Date().toISOString();
 
-              // Enviar para Supabase
-              await sendPaidOrderToSupabase(orderData);
+              console.log("📊 Dados do pedido a enviar:", orderData);
+
+              // Enviar para Supabase - AGUARDAR a resposta
+              const success = await sendPaidOrderToSupabase(orderData);
+
+              if (success) {
+                console.log("✅ Pedido salvo na tabela pedidos com sucesso!");
+                showToast("✅ Pedido confirmado e salvo!");
+              } else {
+                console.warn("⚠️ Pedido pode não ter sido salvo corretamente");
+                showToast("⚠️ Verificando pedido...");
+              }
+            } else {
+              console.warn(
+                "⚠️ Dados do pedido não encontrados no localStorage"
+              );
             }
 
-            // Limpar dados locais após 2 segundos
+            // Limpar dados locais após 1 segundo
             setTimeout(() => {
               localStorage.removeItem("currentOrderData");
               localStorage.removeItem("cartItems");
               localStorage.removeItem("deliveryAddress");
               localStorage.removeItem("customerCpf");
 
-              // Mostrar mensagem de sucesso e redirecionar
-              showToast("🎉 Seu pedido foi confirmado!");
+              // Redirecionar para página de sucesso
+              showToast("🎉 Redirecionando...");
               setTimeout(() => {
                 window.location.href = "/sucesso.html";
-              }, 2000);
-            }, 2000);
+              }, 1500);
+            }, 1000);
           } else if (status === "failed") {
             // ❌ Pagamento recusado
             clearInterval(pollInterval);
+            console.error("❌ Pagamento recusado");
             showToast("❌ Pagamento recusado. Tente novamente.");
 
             // Atualizar status no Supabase
@@ -1084,6 +1144,7 @@
           } else if (attempts >= maxAttempts) {
             // ⏱️ Timeout de 5 minutos
             clearInterval(pollInterval);
+            console.warn("⏱️ Tempo limite de 5 minutos expirado");
             showToast(
               "⏱️ Tempo limite de 5 minutos expirado. Tente novamente."
             );
