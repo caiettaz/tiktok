@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - TikTok Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+            colors: {
+              "tiktok-red": "#ff0050",
+              "tiktok-pink": "#ff1a6b",
+              "tiktok-dark": "#1a1a1a",
+              "tiktok-light": "#f5f5f5",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 0, 80, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      .status-pending {
+        background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+        color: #92400e;
+      }
+      .status-processing {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+      }
+      .status-completed {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
+      }
+      .status-failed {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+      }
+      .status-pix_paid {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
+      }
+      .stat-box {
+        background: linear-gradient(135deg, #ff0050 0%, #ff1a6b 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(255, 0, 80, 0.3);
+        transition: transform 0.3s ease;
+      }
+      .stat-box:hover {
+        transform: translateY(-5px);
+      }
+      .loading-spinner {
+        border: 3px solid rgba(255, 0, 80, 0.2);
+        border-radius: 50%;
+        border-top: 3px solid #ff0050;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        background: linear-gradient(135deg, #ff0050 0%, #ff1a6b 100%);
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+      }
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      tr:hover {
+        background-color: #fff5f9;
+      }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(255, 0, 80, 0.2);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #ff0050 0%, #ff1a6b 100%);
+        color: white;
+        transition: all 0.3s ease;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 0, 80, 0.3);
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-white via-gray-50 to-white">
+    <!-- Header/Navbar -->
+    <nav class="fixed top-0 w-full z-50 glass-effect border-b border-red-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20">
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-12 h-12 rounded-lg bg-gradient-to-br from-tiktok-red to-tiktok-pink flex items-center justify-center text-white font-bold text-xl shadow-lg"
+            >
+              🛍️
+            </div>
+            <h1 class="text-tiktok-red font-black text-2xl hidden sm:block">
+              TikTok Shop Dashboard
+            </h1>
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              id="refreshBtn"
+              class="bg-gradient-to-r from-tiktok-red to-tiktok-pink text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+            >
+              <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+            <button
+              onclick="openTableModal()"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all font-semibold"
+            >
+              <i class="fas fa-cog"></i> Config
+            </button>
+            <a
+              href="index.html"
+              class="text-tiktok-red hover:text-tiktok-pink transition-colors font-semibold"
+            >
+              <i class="fas fa-home mr-2"></i>Voltar
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Config Modal -->
+    <div id="configModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2 class="text-2xl font-bold text-tiktok-red mb-4">
+          <i class="fas fa-cog mr-2"></i>Configurar Dashboard
+        </h2>
+        <div class="mb-4">
+          <label class="block text-tiktok-red font-semibold mb-2"
+            >Nome da Tabela:</label
+          >
+          <input
+            type="text"
+            id="tableInput"
+            placeholder="Ex: pedidos, consultas, clientes..."
+            class="w-full px-4 py-2 border-2 border-tiktok-red/20 rounded-lg focus:ring-2 focus:ring-tiktok-red"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button
+            onclick="saveTableName()"
+            class="flex-1 btn-primary px-4 py-2 rounded-lg transition-all font-semibold"
+          >
+            <i class="fas fa-save mr-2"></i>Salvar
+          </button>
+          <button
+            onclick="closeTableModal()"
+            class="flex-1 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition-all font-semibold"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-24 pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="stat-box">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-white/80 text-sm mb-2">Total de Registros</p>
+                <p class="text-4xl font-bold" id="totalConsultas">0</p>
+              </div>
+              <i class="fas fa-chart-bar text-white/30 text-4xl"></i>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-white/80 text-sm mb-2">Valores Totais</p>
+                <p class="text-3xl font-bold" id="valoresTotais">R$ 0,00</p>
+              </div>
+              <i class="fas fa-dollar-sign text-white/30 text-4xl"></i>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-white/80 text-sm mb-2">Em Processamento</p>
+                <p class="text-4xl font-bold" id="emProcessamento">0</p>
+              </div>
+              <i class="fas fa-hourglass-half text-white/30 text-4xl"></i>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-white/80 text-sm mb-2">Concluídos</p>
+                <p class="text-4xl font-bold" id="concluidos">0</p>
+              </div>
+              <i class="fas fa-check-circle text-white/30 text-4xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Table Info -->
+        <div
+          class="bg-gradient-to-r from-pink-50 to-red-50 border-l-4 border-tiktok-red p-4 mb-8 rounded"
+        >
+          <p class="text-tiktok-red font-semibold">
+            <i class="fas fa-table mr-2"></i><strong>Tabela atual:</strong>
+            <span id="currentTableName">pedidos</span>
+          </p>
+        </div>
+
+        <!-- Data Table Section -->
+        <div
+          class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-tiktok-red/10 shadow-lg"
+        >
+          <h2 class="text-2xl font-black text-tiktok-red mb-6">
+            <i class="fas fa-table mr-2"></i>Pedidos
+          </h2>
+
+          <!-- Loading State -->
+          <div id="loadingState" class="text-center py-12">
+            <div class="inline-flex flex-col items-center gap-4">
+              <div class="loading-spinner"></div>
+              <p class="text-tiktok-red font-semibold">Carregando pedidos...</p>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div
+            id="errorState"
+            class="hidden bg-red-50 border-l-4 border-red-500 p-6 rounded-lg"
+          >
+            <div class="flex items-start gap-3">
+              <i
+                class="fas fa-exclamation-circle text-red-500 text-2xl mt-1"
+              ></i>
+              <div>
+                <h3 class="font-bold text-red-800 mb-2">
+                  Erro ao carregar dados
+                </h3>
+                <p class="text-red-700 mb-4" id="errorMessage"></p>
+                <div class="flex gap-2">
+                  <button
+                    onclick="loadDataFromSupabase()"
+                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-all"
+                  >
+                    <i class="fas fa-redo mr-2"></i>Tentar Novamente
+                  </button>
+                  <button
+                    onclick="openTableModal()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-all"
+                  >
+                    <i class="fas fa-cog mr-2"></i>Mudar Tabela
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div id="tableContainer" class="hidden">
+            <div id="cardsContainer"></div>
+          </div>
+
+          <!-- Empty State -->
+          <div
+            id="emptyState"
+            class="hidden text-center py-12 text-tiktok-red/60"
+          >
+            <i class="fas fa-inbox text-5xl mb-4 inline-block"></i>
+            <p class="text-xl font-semibold">Nenhum pedido encontrado</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer
+      class="bg-gradient-to-r from-tiktok-red to-tiktok-pink text-white py-6 mt-12"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p class="text-white/80 mb-2">
+          &copy; 2025 TikTok Shop - Dashboard de Pedidos
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      const SUPABASE_URL = "https://dcahduxatuajbnsecuzz.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYWhkdXhhdHVhamJuc2VjdXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1ODU2NDcsImV4cCI6MjA3OTE2MTY0N30.sIvEQPYGmuLQUi6kJu-F6PBcjZIQJ_I4Ui-FBUDcwBU";
+
+      let supabase = null;
+      let allData = [];
+      let TABLE_NAME = localStorage.getItem("tableName") || "consultas";
+
+      function initSupabase() {
+        try {
+          supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+          );
+          return true;
+        } catch (error) {
+          showError(`Erro ao inicializar: ${error.message}`);
+          return false;
+        }
+      }
+
+      function openTableModal() {
+        document.getElementById("tableInput").value = TABLE_NAME;
+        document.getElementById("configModal").classList.remove("hidden");
+      }
+
+      function closeTableModal() {
+        document.getElementById("configModal").classList.add("hidden");
+      }
+
+      function saveTableName() {
+        const newTableName = document.getElementById("tableInput").value.trim();
+        if (!newTableName) {
+          alert("Digite um nome de tabela válido");
+          return;
+        }
+        TABLE_NAME = newTableName;
+        localStorage.setItem("tableName", TABLE_NAME);
+        document.getElementById("currentTableName").textContent = TABLE_NAME;
+        closeTableModal();
+        loadDataFromSupabase();
+      }
+
+      function showError(message) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("tableContainer").classList.add("hidden");
+        document.getElementById("errorState").classList.remove("hidden");
+        document.getElementById("errorMessage").textContent = message;
+      }
+
+      async function loadDataFromSupabase() {
+        document.getElementById("errorState").classList.add("hidden");
+        document.getElementById("loadingState").classList.remove("hidden");
+        document.getElementById("tableContainer").classList.add("hidden");
+        document.getElementById("currentTableName").textContent = TABLE_NAME;
+
+        try {
+          if (!supabase) {
+            if (!initSupabase()) return;
+          }
+
+          const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            let errorMsg = error.message;
+            if (error.message.includes("Could not find the table")) {
+              errorMsg = `Tabela '${TABLE_NAME}' não encontrada. Verifique o nome ou crie a tabela no Supabase.`;
+            }
+            showError(errorMsg);
+            return;
+          }
+
+          allData = data || [];
+          updateStats();
+          displayTable();
+          document.getElementById("loadingState").classList.add("hidden");
+
+          if (allData.length === 0) {
+            document.getElementById("emptyState").classList.remove("hidden");
+          } else {
+            document.getElementById("emptyState").classList.add("hidden");
+            document
+              .getElementById("tableContainer")
+              .classList.remove("hidden");
+          }
+        } catch (error) {
+          showError(`Erro inesperado: ${error.message}`);
+        }
+      }
+
+      function updateStats() {
+        const total = allData.length;
+
+        // Extrai valores considerando que pode estar em objeto aninhado
+        const valoresTotal = allData.reduce((sum, item) => {
+          let valor = 0;
+
+          // Tenta encontrar o valor em diferentes locais
+          if (typeof item.valor === "number") {
+            valor = item.valor;
+          } else if (typeof item.valor === "string") {
+            valor = parseFloat(item.valor) || 0;
+          } else if (typeof item.amount === "number") {
+            valor = item.amount;
+          } else if (typeof item.price === "number") {
+            valor = item.price;
+          }
+
+          return sum + valor;
+        }, 0);
+
+        // Conta status (pode estar em diferentes campos)
+        const emProcessamento = allData.filter((item) => {
+          const status = item.status || item.estado || item.situation;
+          return (
+            status === "processing" ||
+            status === "em processamento" ||
+            status === "processando"
+          );
+        }).length;
+
+        const concluidos = allData.filter((item) => {
+          const status = item.status || item.estado || item.situation;
+          return (
+            status === "completed" ||
+            status === "concluído" ||
+            status === "finished"
+          );
+        }).length;
+
+        document.getElementById("totalConsultas").textContent = total;
+        document.getElementById(
+          "valoresTotais"
+        ).textContent = `R$ ${valoresTotal.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+        })}`;
+        document.getElementById("emProcessamento").textContent =
+          emProcessamento;
+        document.getElementById("concluidos").textContent = concluidos;
+      }
+
+      function displayTable() {
+        const tableContainer = document.getElementById("tableContainer");
+
+        if (allData.length === 0) return;
+
+        // Create detailed card view for better readability
+        const cardsContainer = document.createElement("div");
+        cardsContainer.className =
+          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+        cardsContainer.id = "cardsContainer";
+
+        allData.forEach((item) => {
+          const card = document.createElement("div");
+          card.className =
+            "bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md hover:shadow-xl transition-all border border-tiktok-red/10 p-6";
+
+          let cardHTML = '<div class="space-y-4">';
+
+          // Processa cada campo
+          Object.entries(item).forEach(([key, value]) => {
+            // Campos a ignorar
+            const fieldsToIgnore = [
+              "id",
+              "total",
+              "imagem",
+              "image",
+              "desconto",
+              "discount",
+              "preço antigo",
+              "preco_antigo",
+              "precoantigo",
+              "old_price",
+              "oldprice",
+            ];
+
+            if (
+              fieldsToIgnore.some(
+                (field) => key.toLowerCase() === field.toLowerCase()
+              )
+            )
+              return;
+
+            let fieldLabel =
+              key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
+            let fieldContent = "";
+
+            // Verifica se é um array (lista de itens/produtos)
+            if (Array.isArray(value)) {
+              if (value.length === 0) {
+                fieldContent = '<span class="text-gray-400">Lista vazia</span>';
+              } else {
+                // Verifica se é um array de objetos
+                if (typeof value[0] === "object" && value[0] !== null) {
+                  fieldContent = `<div class="space-y-2">`;
+                  value.forEach((item, idx) => {
+                    fieldContent += `<div class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">`;
+                    fieldContent += `<p class="text-xs font-bold text-yellow-900 mb-2">Item ${
+                      idx + 1
+                    }</p>`;
+                    Object.entries(item).forEach(([itemKey, itemValue]) => {
+                      // Ignorar campos nos itens também
+                      if (
+                        fieldsToIgnore.some(
+                          (field) =>
+                            itemKey.toLowerCase() === field.toLowerCase()
+                        )
+                      )
+                        return;
+
+                      const itemLabel =
+                        itemKey.charAt(0).toUpperCase() +
+                        itemKey.slice(1).replace(/_/g, " ");
+                      let itemDisplay = itemValue;
+
+                      // Formata valores especiais dentro dos itens
+                      if (
+                        itemKey.toLowerCase().includes("preco") ||
+                        itemKey.toLowerCase().includes("price") ||
+                        itemKey.toLowerCase().includes("valor")
+                      ) {
+                        itemDisplay = `R$ ${(
+                          parseFloat(itemValue) || 0
+                        ).toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}`;
+                      } else if (
+                        itemKey.toLowerCase().includes("quantidade") ||
+                        itemKey.toLowerCase().includes("qtd")
+                      ) {
+                        itemDisplay = `${itemValue}x`;
+                      }
+
+                      fieldContent += `<p class="text-xs mb-1"><strong class="text-yellow-900">${itemLabel}:</strong> <span class="text-gray-700">${itemDisplay}</span></p>`;
+                    });
+                    fieldContent += `</div>`;
+                  });
+                  fieldContent += `</div>`;
+                } else {
+                  // Array de valores simples
+                  fieldContent = `<div class="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
+                    <p class="text-sm text-gray-700">${value.join(", ")}</p>
+                  </div>`;
+                }
+              }
+              cardHTML += `<div><p class="font-semibold text-yellow-700 text-sm mb-2">📦 ${fieldLabel}</p>${fieldContent}</div>`;
+              return;
+            }
+
+            // Lida com objetos aninhados (dados pessoais, endereço, etc)
+            if (typeof value === "object" && value !== null) {
+              fieldContent = `<div class="bg-blue-50 rounded-lg p-3 border border-blue-200">`;
+              Object.entries(value).forEach(([nestedKey, nestedValue]) => {
+                // Ignorar campos nos objetos aninhados também
+                if (
+                  fieldsToIgnore.some(
+                    (field) => nestedKey.toLowerCase() === field.toLowerCase()
+                  )
+                )
+                  return;
+
+                const nestedLabel =
+                  nestedKey.charAt(0).toUpperCase() +
+                  nestedKey.slice(1).replace(/_/g, " ");
+                let nestedDisplay = nestedValue;
+
+                // Formata valores especiais dentro dos objetos
+                if (
+                  nestedKey.toLowerCase().includes("preco") ||
+                  nestedKey.toLowerCase().includes("price") ||
+                  nestedKey.toLowerCase().includes("valor")
+                ) {
+                  nestedDisplay = `R$ ${(
+                    parseFloat(nestedValue) || 0
+                  ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+                }
+
+                nestedDisplay =
+                  nestedDisplay || '<span class="text-gray-400">N/A</span>';
+                fieldContent += `<p class="text-sm mb-1"><strong class="text-tiktok-red">${nestedLabel}:</strong> <span class="text-gray-700">${nestedDisplay}</span></p>`;
+              });
+              fieldContent += `</div>`;
+              cardHTML += `<div><p class="font-semibold text-tiktok-pink text-sm mb-2">${fieldLabel}</p>${fieldContent}</div>`;
+              return;
+            }
+
+            // Formata valores especiais
+            if (
+              key.toLowerCase().includes("valor") ||
+              key.toLowerCase().includes("price") ||
+              key.toLowerCase().includes("amount")
+            ) {
+              fieldContent = `<span class="font-bold text-tiktok-red text-lg">R$ ${(
+                parseFloat(value) || 0
+              ).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+              })}</span>`;
+            } else if (key.toLowerCase().includes("status")) {
+              const statusClass = value ? `status-${value}` : "status-pending";
+              fieldContent = `<span class="status-badge ${statusClass}">${getStatusLabel(
+                value
+              )}</span>`;
+            } else if (
+              key.toLowerCase().includes("date") ||
+              key.toLowerCase().includes("created") ||
+              key.toLowerCase().includes("updated")
+            ) {
+              try {
+                fieldContent = `<span class="text-tiktok-red font-medium">${new Date(
+                  value
+                ).toLocaleDateString("pt-BR")}</span>`;
+              } catch (e) {
+                fieldContent = `<span class="text-gray-400">N/A</span>`;
+              }
+            } else {
+              fieldContent = `<span class="text-gray-700">${
+                value || '<span class="text-gray-400">N/A</span>'
+              }</span>`;
+            }
+
+            cardHTML += `<div>
+              <p class="text-xs font-semibold text-tiktok-red/70 mb-1 uppercase tracking-wider">${fieldLabel}</p>
+              <p class="text-sm">${fieldContent}</p>
+            </div>`;
+          });
+
+          cardHTML += "</div>";
+          card.innerHTML = cardHTML;
+          cardsContainer.appendChild(card);
+        });
+
+        // Replace table container with cards
+        if (document.getElementById("cardsContainer")) {
+          document.getElementById("cardsContainer").remove();
+        }
+        tableContainer.appendChild(cardsContainer);
+      }
+
+      function getStatusLabel(status) {
+        const labels = {
+          pending: "⏳ Pendente",
+          processing: "⚙️ Processando",
+          completed: "✅ Concluído",
+          failed: "❌ Falha",
+        };
+        return labels[status] || "Desconhecido";
+      }
+
+      document.getElementById("refreshBtn").addEventListener("click", () => {
+        document.getElementById("refreshBtn").disabled = true;
+        document.getElementById("refreshBtn").innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+        loadDataFromSupabase().then(() => {
+          document.getElementById("refreshBtn").disabled = false;
+          document.getElementById("refreshBtn").innerHTML =
+            '<i class="fas fa-sync-alt"></i> Atualizar';
+        });
+      });
+
+      document.getElementById("configModal").addEventListener("click", (e) => {
+        if (e.target.id === "configModal") closeTableModal();
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("currentTableName").textContent = TABLE_NAME;
+        loadDataFromSupabase();
+      });
+    </script>
+  </body>
+</html>
