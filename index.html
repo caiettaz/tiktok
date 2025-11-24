@@ -1002,6 +1002,148 @@
         opacity: 1;
       }
 
+      /* Modal de Validação */
+      .validation-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1100;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s;
+      }
+
+      .validation-modal-overlay.show {
+        display: flex;
+      }
+
+      .validation-modal {
+        background: linear-gradient(135deg, #ff0050 0%, #ff1a6b 100%);
+        border-radius: 16px;
+        padding: 32px 24px;
+        max-width: 380px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(255, 0, 80, 0.3);
+        color: white;
+        text-align: center;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .validation-modal-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        animation: bounce 0.6s;
+      }
+
+      .validation-modal-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
+      }
+
+      .validation-modal-message {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .validation-modal-fields {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .validation-modal-field {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .validation-modal-field:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      .validation-modal-field-icon {
+        color: #ff6b9d;
+        font-weight: bold;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .validation-modal-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .validation-modal-btn {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .validation-modal-btn-primary {
+        background: white;
+        color: #ff0050;
+      }
+
+      .validation-modal-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      }
+
+      .validation-modal-btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+      }
+
+      .validation-modal-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
       /* Modal de Compra */
       .modal-overlay {
         display: none;
@@ -3395,6 +3537,34 @@
       </div>
     </div>
 
+    <!-- Modal de Validação de Campos Faltantes -->
+    <div class="validation-modal-overlay" id="validationModal">
+      <div class="validation-modal">
+        <div class="validation-modal-icon">⚠️</div>
+        <div class="validation-modal-title">Dados Incompletos</div>
+        <div class="validation-modal-message">
+          Por favor, preencha todos os campos obrigatórios:
+        </div>
+        <div class="validation-modal-fields" id="validationFieldsList">
+          <!-- Campos faltantes serão inseridos aqui via JavaScript -->
+        </div>
+        <div class="validation-modal-buttons">
+          <button
+            class="validation-modal-btn validation-modal-btn-secondary"
+            onclick="closeValidationModal()"
+          >
+            Fechar
+          </button>
+          <button
+            class="validation-modal-btn validation-modal-btn-primary"
+            onclick="redirectToForm()"
+          >
+            Preencher Agora
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal de Compra -->
     <div
       class="modal-overlay"
@@ -4894,6 +5064,8 @@
         const savedAddress = localStorage.getItem("deliveryAddress");
         const cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
 
+        const missingFields = [];
+
         // Validar carrinho
         if (!cartItems || cartItems.length === 0) {
           showToast("Seu carrinho está vazio!");
@@ -4902,41 +5074,51 @@
 
         // Validar CPF
         if (!savedCpf) {
-          showToast("❌ Por favor, preencha o CPF antes de continuar!");
-          return;
-        }
-
-        // Validar campos de CPF
-        const cpfData = JSON.parse(savedCpf);
-        if (
-          !cpfData.cpf ||
-          !cpfData.nome ||
-          !cpfData.telefone ||
-          !cpfData.email
-        ) {
-          showToast("❌ Todos os campos de CPF são obrigatórios!");
-          return;
+          missingFields.push({
+            field: "CPF",
+            label: "Dados Pessoais (CPF, Nome, Email, Telefone)",
+          });
+        } else {
+          // Validar campos individuais de CPF
+          const cpfData = JSON.parse(savedCpf);
+          if (!cpfData.cpf) missingFields.push({ field: "CPF", label: "CPF" });
+          if (!cpfData.nome)
+            missingFields.push({
+              field: "Nome Completo",
+              label: "Nome Completo",
+            });
+          if (!cpfData.telefone)
+            missingFields.push({ field: "Telefone", label: "Telefone" });
+          if (!cpfData.email)
+            missingFields.push({ field: "Email", label: "Email" });
         }
 
         // Validar endereço
         if (!savedAddress) {
-          showToast(
-            "❌ Por favor, preencha o endereço de entrega antes de continuar!"
-          );
-          return;
+          missingFields.push({
+            field: "Endereço",
+            label: "Endereço de Entrega Completo",
+          });
+        } else {
+          // Validar campos individuais de endereço
+          const addressData = JSON.parse(savedAddress);
+          if (!addressData.cep)
+            missingFields.push({ field: "CEP", label: "CEP" });
+          if (!addressData.rua)
+            missingFields.push({ field: "Rua", label: "Rua" });
+          if (!addressData.numero)
+            missingFields.push({ field: "Número", label: "Número" });
+          if (!addressData.bairro)
+            missingFields.push({ field: "Bairro", label: "Bairro" });
+          if (!addressData.cidade)
+            missingFields.push({ field: "Cidade", label: "Cidade" });
+          if (!addressData.estado)
+            missingFields.push({ field: "Estado", label: "Estado" });
         }
 
-        // Validar campos de endereço
-        const addressData = JSON.parse(savedAddress);
-        if (
-          !addressData.cep ||
-          !addressData.rua ||
-          !addressData.numero ||
-          !addressData.bairro ||
-          !addressData.cidade ||
-          !addressData.estado
-        ) {
-          showToast("❌ Todos os campos de endereço são obrigatórios!");
+        // Se houver campos faltantes, mostrar modal de validação
+        if (missingFields.length > 0) {
+          showValidationModal(missingFields);
           return;
         }
 
@@ -4949,6 +5131,61 @@
           // Redirecionar para página de checkout
           window.location.href = "checkout.html";
         });
+      }
+
+      // Mostrar modal de validação
+      function showValidationModal(missingFields) {
+        const fieldsList = document.getElementById("validationFieldsList");
+        let html = "";
+
+        // Remover duplicatas
+        const uniqueFields = [];
+        const seenFields = new Set();
+        missingFields.forEach((field) => {
+          if (!seenFields.has(field.field)) {
+            seenFields.add(field.field);
+            uniqueFields.push(field);
+          }
+        });
+
+        uniqueFields.forEach((field) => {
+          html += `
+            <div class="validation-modal-field">
+              <span class="validation-modal-field-icon">✕</span>
+              <span>${field.label}</span>
+            </div>
+          `;
+        });
+
+        fieldsList.innerHTML = html;
+
+        // Mostrar modal
+        const modal = document.getElementById("validationModal");
+        modal.classList.add("show");
+      }
+
+      // Fechar modal de validação
+      function closeValidationModal() {
+        const modal = document.getElementById("validationModal");
+        modal.classList.remove("show");
+      }
+
+      // Redirecionar para formulário
+      function redirectToForm() {
+        closeValidationModal();
+
+        // Verificar qual formulário abrir baseado nos dados existentes
+        const savedCpf = localStorage.getItem("customerCpf");
+        const savedAddress = localStorage.getItem("deliveryAddress");
+
+        if (!savedCpf) {
+          openCpfModal();
+        } else if (!savedAddress) {
+          openAddressModal();
+        } else {
+          // Se ambos existem mas com campos faltantes, abrir CPF primeiro
+          openCpfModal();
+        }
       }
 
       // ⭐ NOVO: Salvar lead no Supabase
