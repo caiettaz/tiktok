@@ -796,15 +796,20 @@
           const payload = {
             amount: Math.round(amount * 100), // Converter para centavos
             description: "Compra de Produtos TikTok Shop",
-            reference: reference,
+            external_id: reference,
             customer: {
               name: customerName,
               email: customerEmail,
               phone: customerPhone,
               document: customerCpf,
             },
-            productHash: "prod_86dc2503e08b7532", // Código do produto
+            productHash: "prod_86dc2503e08b7532",
           };
+
+          console.log(
+            "🔍 Payload enviado para Paradise Pags:",
+            JSON.stringify(payload, null, 2)
+          );
 
           // Fazer requisição para a API do Paradise Pags
           const response = await fetch(PARADISE_API_URL, {
@@ -816,11 +821,15 @@
             body: JSON.stringify(payload),
           });
 
+          console.log("📊 Response Status:", response.status);
+
           const data = await response.json();
 
+          console.log("📦 Response Data:", data);
+
           if (!response.ok) {
-            console.error("Erro na API Paradise:", data);
-            throw new Error(data.message || "Erro ao gerar PIX");
+            console.error("❌ Erro na API Paradise:", data);
+            throw new Error(data.error || data.message || "Erro ao gerar PIX");
           }
 
           if (data.status === "success") {
