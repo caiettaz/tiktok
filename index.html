@@ -2787,12 +2787,34 @@
         font-size: 14px;
         color: #333;
         box-sizing: border-box;
-        transition: border-color 0.3s;
+        transition: border-color 0.3s, box-shadow 0.3s;
       }
 
       .form-input:focus {
         outline: none;
         border-color: #ff0050;
+      }
+
+      .form-input.valid {
+        border-color: #4caf50;
+        border-width: 2px;
+        background-color: rgba(76, 175, 80, 0.05);
+      }
+
+      .form-input.valid:focus {
+        border-color: #4caf50;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+      }
+
+      .form-input.invalid {
+        border-color: #f44336;
+        border-width: 2px;
+        background-color: rgba(244, 67, 54, 0.05);
+      }
+
+      .form-input.invalid:focus {
+        border-color: #f44336;
+        box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
       }
 
       .form-input.missing {
@@ -2804,6 +2826,24 @@
       .form-input.missing:focus {
         border-color: #ff0050;
         box-shadow: 0 0 0 3px rgba(255, 0, 80, 0.1);
+      }
+
+      .validation-feedback {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 6px;
+        padding: 0 4px;
+      }
+
+      .validation-feedback.valid {
+        color: #4caf50;
+      }
+
+      .validation-feedback.invalid {
+        color: #f44336;
       }
 
       .form-group-warning {
@@ -5492,6 +5532,9 @@
         // Verificar campos faltantes e destacá-los
         highlightMissingCpfFields();
 
+        // Setup validação em tempo real
+        setupCpfFormValidation();
+
         document.getElementById("cpfModal").classList.add("show");
         document.body.style.overflow = "hidden";
       }
@@ -5539,15 +5582,304 @@
         document.body.style.overflow = "auto";
       }
 
+      // ========================================
+      // FUNÇÕES DE VALIDAÇÃO EM TEMPO REAL
+      // ========================================
+
+      // Validar CPF
+      function validateCpf(cpf) {
+        cpf = cpf.replace(/\D/g, "");
+        if (cpf.length !== 11) return false;
+        if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+        let sum = 0;
+        let remainder;
+
+        for (let i = 1; i <= 9; i++) {
+          sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+        }
+
+        remainder = (sum * 10) % 11;
+        if (remainder === 10 || remainder === 11) remainder = 0;
+        if (remainder !== parseInt(cpf.substring(9, 10))) return false;
+
+        sum = 0;
+        for (let i = 1; i <= 10; i++) {
+          sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+        }
+
+        remainder = (sum * 10) % 11;
+        if (remainder === 10 || remainder === 11) remainder = 0;
+        if (remainder !== parseInt(cpf.substring(10, 11))) return false;
+
+        return true;
+      }
+
+      // Validar Email
+      function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+
+      // Validar Telefone (10 ou 11 dígitos)
+      function validateTelefone(telefone) {
+        const telefoneRegex = /^(\d{10}|\d{11})$/;
+        const apenasDigitos = telefone.replace(/\D/g, "");
+        return telefoneRegex.test(apenasDigitos);
+      }
+
+      // Validar Nome (mínimo 3 caracteres, sem números)
+      function validateNome(nome) {
+        const nomeRegex = /^[a-záàâãéèêéïóôõöúçñ\s]{3,}$/i;
+        return nomeRegex.test(nome.trim());
+      }
+
+      // Formatar CPF enquanto digita
+      function formatCpf(value) {
+        value = value.replace(/\D/g, "");
+        if (value.length > 11) value = value.substring(0, 11);
+        if (value.length <= 3) return value;
+        if (value.length <= 6)
+          return value.substring(0, 3) + "." + value.substring(3);
+        if (value.length <= 9)
+          return (
+            value.substring(0, 3) +
+            "." +
+            value.substring(3, 6) +
+            "." +
+            value.substring(6)
+          );
+        return (
+          value.substring(0, 3) +
+          "." +
+          value.substring(3, 6) +
+          "." +
+          value.substring(6, 9) +
+          "-" +
+          value.substring(9)
+        );
+      }
+
+      // Validar campo de CPF em tempo real
+      function onCpfInput(event) {
+        const input = event.target;
+        const cpf = input.value;
+        const formGroup = input.parentElement;
+        const existingFeedback = formGroup.querySelector(
+          ".validation-feedback"
+        );
+
+        if (existingFeedback) existingFeedback.remove();
+
+        if (cpf.length === 0) {
+          input.classList.remove("valid", "invalid");
+          return;
+        }
+
+        const isValid = validateCpf(cpf);
+        if (isValid) {
+          input.classList.remove("invalid");
+          input.classList.add("valid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback valid";
+          feedback.innerHTML = `<span style="color: #4caf50;">✓ CPF válido</span>`;
+          formGroup.appendChild(feedback);
+        } else {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ CPF inválido</span>`;
+          formGroup.appendChild(feedback);
+        }
+      }
+
+      // Validar campo de Email em tempo real
+      function onEmailInput(event) {
+        const input = event.target;
+        const email = input.value;
+        const formGroup = input.parentElement;
+        const existingFeedback = formGroup.querySelector(
+          ".validation-feedback"
+        );
+
+        if (existingFeedback) existingFeedback.remove();
+
+        if (email.length === 0) {
+          input.classList.remove("valid", "invalid");
+          return;
+        }
+
+        const isValid = validateEmail(email);
+        if (isValid) {
+          input.classList.remove("invalid");
+          input.classList.add("valid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback valid";
+          feedback.innerHTML = `<span style="color: #4caf50;">✓ Email válido</span>`;
+          formGroup.appendChild(feedback);
+        } else {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ Email inválido</span>`;
+          formGroup.appendChild(feedback);
+        }
+      }
+
+      // Validar campo de Telefone em tempo real
+      function onTelefoneInput(event) {
+        const input = event.target;
+        const telefone = input.value;
+        const formGroup = input.parentElement;
+        const existingFeedback = formGroup.querySelector(
+          ".validation-feedback"
+        );
+
+        if (existingFeedback) existingFeedback.remove();
+
+        if (telefone.length === 0) {
+          input.classList.remove("valid", "invalid");
+          return;
+        }
+
+        const isValid = validateTelefone(telefone);
+        const apenasDigitos = telefone.replace(/\D/g, "");
+
+        if (isValid) {
+          input.classList.remove("invalid");
+          input.classList.add("valid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback valid";
+          feedback.innerHTML = `<span style="color: #4caf50;">✓ Telefone válido</span>`;
+          formGroup.appendChild(feedback);
+        } else if (apenasDigitos.length < 10) {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ Mínimo 10 dígitos</span>`;
+          formGroup.appendChild(feedback);
+        } else if (apenasDigitos.length > 11) {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ Máximo 11 dígitos</span>`;
+          formGroup.appendChild(feedback);
+        } else {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ Telefone inválido</span>`;
+          formGroup.appendChild(feedback);
+        }
+      }
+
+      // Validar campo de Nome em tempo real
+      function onNomeInput(event) {
+        const input = event.target;
+        const nome = input.value;
+        const formGroup = input.parentElement;
+        const existingFeedback = formGroup.querySelector(
+          ".validation-feedback"
+        );
+
+        if (existingFeedback) existingFeedback.remove();
+
+        if (nome.length === 0) {
+          input.classList.remove("valid", "invalid");
+          return;
+        }
+
+        const isValid = validateNome(nome);
+        if (isValid && nome.trim().split(" ").length >= 2) {
+          input.classList.remove("invalid");
+          input.classList.add("valid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback valid";
+          feedback.innerHTML = `<span style="color: #4caf50;">✓ Nome válido</span>`;
+          formGroup.appendChild(feedback);
+        } else if (!isValid) {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          let message = "✕ Nome inválido";
+          if (nome.trim().split(" ").length < 2) {
+            message = "✕ Digite nome e sobrenome";
+          }
+          feedback.innerHTML = `<span style="color: #f44336;">${message}</span>`;
+          formGroup.appendChild(feedback);
+        } else {
+          input.classList.remove("valid");
+          input.classList.add("invalid");
+          const feedback = document.createElement("div");
+          feedback.className = "validation-feedback invalid";
+          feedback.innerHTML = `<span style="color: #f44336;">✕ Digite nome e sobrenome</span>`;
+          formGroup.appendChild(feedback);
+        }
+      }
+
+      // Adicionar event listeners quando o modal é aberto
+      function setupCpfFormValidation() {
+        const cpfInput = document.getElementById("cpfInput");
+        const nomeInput = document.getElementById("nomeCompleto");
+        const telefoneInput = document.getElementById("telefoneInput");
+        const emailInput = document.getElementById("emailInput");
+
+        if (cpfInput) {
+          cpfInput.addEventListener("input", (e) => {
+            e.target.value = formatCpf(e.target.value);
+            onCpfInput(e);
+          });
+        }
+        if (telefoneInput) {
+          telefoneInput.addEventListener("input", onTelefoneInput);
+        }
+        if (emailInput) {
+          emailInput.addEventListener("input", onEmailInput);
+        }
+        if (nomeInput) {
+          nomeInput.addEventListener("input", onNomeInput);
+        }
+      }
+
       function saveCpf() {
         const cpf = document.getElementById("cpfInput").value;
         const nome = document.getElementById("nomeCompleto").value;
         const telefone = document.getElementById("telefoneInput").value;
         const email = document.getElementById("emailInput").value;
 
-        // Validação básica
+        // Validação completa
         if (!cpf || !nome || !telefone || !email) {
           showToast("Preencha todos os campos!");
+          return;
+        }
+
+        // Validar CPF
+        if (!validateCpf(cpf)) {
+          showToast("❌ CPF inválido!");
+          return;
+        }
+
+        // Validar Telefone
+        if (!validateTelefone(telefone)) {
+          showToast("❌ Telefone inválido! Use 10 ou 11 dígitos.");
+          return;
+        }
+
+        // Validar Email
+        if (!validateEmail(email)) {
+          showToast("❌ Email inválido!");
+          return;
+        }
+
+        // Validar Nome
+        if (!validateNome(nome) || nome.trim().split(" ").length < 2) {
+          showToast("❌ Digite nome e sobrenome válidos!");
           return;
         }
 
@@ -5565,7 +5897,7 @@
         document.getElementById("cpfBtnText").textContent = `CPF: ${cpf}`;
 
         closeCpfModal();
-        showToast("CPF salvo com sucesso!");
+        showToast("✅ CPF salvo com sucesso!");
       }
 
       // Carregar dados salvos ao abrir checkout
